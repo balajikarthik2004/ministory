@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "MiniDrama base",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+
+    /* CLAUDE.md §10 - strict TypeScript, no `any`. */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false,
+    "useUnknownInCatchVariables": true,
+
+    /* Unused code is a review finding, not a build error - ESLint reports it. */
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "exclude": ["node_modules", "dist", "build", ".turbo"]
+}

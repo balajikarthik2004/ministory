@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /* Node ESM output. Relative imports must carry a .js extension, which is
+       what makes `node dist/server.js` work without a bundler. */
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": false,
+    "sourceMap": true,
+    "noEmit": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

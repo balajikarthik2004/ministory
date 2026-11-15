@@ -1,0 +1,32 @@
+{
+  "name": "minidrama",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MiniDrama - short-form vertical drama streaming platform",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rimraf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "dev:backend": "pnpm --filter @minidrama/backend dev",
+    "dev:admin": "pnpm --filter @minidrama/admin dev",
+    "dev:mobile": "pnpm --filter @minidrama/mobile start"
+  },
+  "devDependencies": {
+    "@minidrama/config": "workspace:*",
+    "eslint": "10.15.0",
+    "prettier": "3.10.1",
+    "rimraf": "6.1.4",
+    "turbo": "2.11.11",
+    "typescript": "6.0.3"
+  }
+}

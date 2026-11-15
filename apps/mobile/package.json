@@ -1,0 +1,39 @@
+{
+  "name": "@minidrama/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MiniDrama mobile app (Expo + React Native + TypeScript)",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "start:clear": "expo start --clear",
+    "android": "expo start --android",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "doctor": "expo-doctor",
+    "deps:check": "expo install --check",
+    "clean": "rimraf .expo .turbo node_modules/.cache"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "58.0.17",
+    "@minidrama/contracts": "workspace:*",
+    "@minidrama/ui-tokens": "workspace:*",
+    "expo": "58.0.25",
+    "expo-constants": "58.0.16",
+    "expo-linking": "58.0.17",
+    "expo-router": "58.0.31",
+    "expo-status-bar": "58.0.5",
+    "expo-system-ui": "58.0.7",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "5.11.1",
+    "react-native-screens": "4.30.1"
+  },
+  "devDependencies": {
+    "@minidrama/config": "workspace:*",
+    "@types/react": "19.3.0",
+    "eslint": "10.15.0",
+    "rimraf": "6.1.4",
+    "typescript": "6.0.3"
+  }
+}

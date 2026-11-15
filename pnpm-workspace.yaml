@@ -1,0 +1,22 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Expo's Metro bundler cannot reliably resolve pnpm's symlinked store.
+# Hoisted linking is the layout Expo documents for monorepos.
+# See docs/DECISIONS.md ADR-02.
+nodeLinker: hoisted
+
+# Exactly one copy of React in the tree.
+# Two copies is the classic cause of "invalid hook call", and a hoisted layout
+# makes it easy for a transitive optional peer to pull in a second one.
+# Expo SDK 58 expects 19.3.0, so that is what everything gets.
+overrides:
+  react: 19.3.0
+  react-dom: 19.3.0
+
+# pnpm blocks dependency lifecycle scripts by default - a postinstall script is
+# arbitrary code execution at install time. Only these are allowed to run, and
+# each is a build-tool binary that genuinely needs one.
+allowBuilds:
+  esbuild: true

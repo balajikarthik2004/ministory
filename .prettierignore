@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.turbo/
+.expo/
+.expo-export/
+coverage/
+pnpm-lock.yaml
+
+# Documentation is hand-formatted prose and wide tables. Reformatting it
+# produces large diffs that hide real content changes in review.
+CLAUDE.md
+docs/

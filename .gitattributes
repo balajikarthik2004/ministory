@@ -1,0 +1,36 @@
+# Normalise line endings.
+#
+# Git on Windows defaults to core.autocrlf=true, which rewrites files on
+# checkout. That fights Prettier's `endOfLine: lf` and produces whole-file
+# diffs when a Windows and a macOS/Linux machine touch the same repo.
+# Storing LF in the repository and checking out LF everywhere removes it.
+* text=auto eol=lf
+
+# Generated - don't diff it, don't let anyone merge it by hand.
+pnpm-lock.yaml linguist-generated=true -diff merge=binary
+
+# Shell scripts must keep LF or they will not run.
+*.sh text eol=lf
+
+# Binary assets: never translate, never diff as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.mp4   binary
+*.m4s   binary
+*.aac   binary
+*.hbc   binary
+*.keystore binary
+*.jks   binary
+
+# `.ts` is ambiguous: TypeScript source *and* MPEG-TS video segments.
+# The global rule above treats it as text, which is right for source.
+# HLS fixtures are generated video - force binary there so Git never
+# tries to translate line endings inside a transport stream.
+tools/video-fixtures/** binary

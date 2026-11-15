@@ -1,0 +1,31 @@
+{
+  "name": "@minidrama/ui-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design tokens shared by the MiniDrama mobile app and admin dashboard",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "clean": "rimraf dist .turbo"
+  },
+  "devDependencies": {
+    "@minidrama/config": "workspace:*",
+    "eslint": "10.15.0",
+    "rimraf": "6.1.4",
+    "typescript": "6.0.3"
+  }
+}

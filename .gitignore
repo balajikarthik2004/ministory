@@ -1,0 +1,81 @@
+# ───────────────────────────── Secrets ─────────────────────────────
+# Never commit real credentials. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+secrets/
+
+# ──────────────────────────── Dependencies ─────────────────────────
+node_modules/
+.pnpm-store/
+.pnp.*
+.yarn/*
+
+# ────────────────────────────── Build ──────────────────────────────
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+
+# ───────────────────────────── Turborepo ───────────────────────────
+.turbo/
+
+# ─────────────────────────── Expo / React Native ───────────────────
+.expo/
+.expo-shared/
+apps/mobile/android/
+apps/mobile/ios/
+*.apk
+*.aab
+*.ipa
+*.jsbundle
+.metro-health-check*
+.expo-export/
+expo-env.d.ts
+
+# ───────────────────────────── Vite / Web ──────────────────────────
+.vite/
+vite.config.*.timestamp-*
+
+# ─────────────────────────────── Prisma ────────────────────────────
+# Migrations ARE tracked. Generated client is not.
+apps/backend/prisma/generated/
+apps/backend/src/generated/
+
+# ──────────────────────────────── Logs ─────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ──────────────────────────────── IDE ──────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ──────────────────────────────── OS ───────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ──────────────────────────────── Misc ─────────────────────────────
+*.local
+.cache/
+tmp/
+temp/
