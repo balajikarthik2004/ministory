@@ -28,6 +28,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { ABR_EPISODES } from './video-fixtures/episodes.abr.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -46,6 +47,7 @@ const FIXTURE_HINT =
   '        (run: node tools/video-fixtures/generate-abr.mjs)' + String.fromCharCode(10);
 let failures = 0;
 let checks = 0;
+let skipped = 0;
 
 function check(label, condition, detail = '') {
   checks += 1;
@@ -56,6 +58,19 @@ function check(label, condition, detail = '') {
   failures += 1;
   process.stdout.write(`  FAIL  ${label}${detail ? ` — ${detail}` : ''}\n`);
   return false;
+}
+
+/**
+ * A check that could not run here, as opposed to one that passed.
+ *
+ * Counted and reported separately so that "everything passed" never quietly
+ * means "that check was unavailable". It does not affect the exit code: the
+ * only thing skipped is the comparison against generated media, which needs
+ * 146 MB of fixtures that a clean checkout deliberately does not carry.
+ */
+function skip(label, reason) {
+  skipped += 1;
+  process.stdout.write(`  skip  ${label} — ${reason}\n`);
 }
 
 function section(title) {
@@ -179,6 +194,58 @@ section('Episode duration matches the media served');
 
 {
   const { FIXTURES, fixtureForEpisode } = mock;
+
+  /*
+   * STRUCTURAL: the mock against the fixture SPECIFICATION.
+   *
+   * This runs everywhere, including a clean runner with no fixtures on disk.
+   * It used to run against `out-abr/manifest.json` — a generated artifact
+   * sitting beside 146 MB of encoded video, gitignored, and therefore absent
+   * from every fresh checkout. The check was simply unavailable in CI.
+   *
+   * Nothing is lost by comparing against the spec instead: `generate-abr.mjs`
+   * copies `durationSeconds` straight out of this same table rather than
+   * probing the encoded file, so this verifies the identical relationship —
+   * and now verifies it on every run.
+   */
+  for (const fixture of FIXTURES) {
+    const spec = ABR_EPISODES.find((episode) => episode.id === fixture.id);
+    check(
+      `FIXTURES ${fixture.id} duration ${fixture.durationSec}s matches the fixture spec`,
+      spec !== undefined && spec.duration === fixture.durationSec,
+      spec ? `spec says ${spec.duration}s` : 'not in episodes.abr.mjs',
+    );
+  }
+
+  for (const spec of ABR_EPISODES) {
+    check(
+      `fixture spec ${spec.id} has a FIXTURES entry`,
+      FIXTURES.some((fixture) => fixture.id === spec.id),
+      'declared in episodes.abr.mjs but missing from the mock catalogue',
+    );
+  }
+
+  for (const drama of MOCK_CATALOGUE.dramas) {
+    const episodes = MOCK_CATALOGUE.episodesByDrama.get(drama.id) ?? [];
+    const mismatched = episodes.filter(
+      (episode) => episode.durationSec !== fixtureForEpisode(episode.episodeNumber).durationSec,
+    );
+    check(
+      `${drama.slug}: every episode's durationSec matches its fixture`,
+      mismatched.length === 0,
+      mismatched.map((e) => `ep${e.episodeNumber}=${e.durationSec}s`).join(', '),
+    );
+  }
+
+  /*
+   * MEDIA: the generated manifest against the same specification.
+   *
+   * Only possible where the fixtures have actually been generated, so it is
+   * SKIPPED rather than passed when they have not — a skip is reported in the
+   * summary and is never counted as a pass. What it adds over the checks
+   * above is catching a STALE `out-abr/`: media generated before a duration
+   * changed, which would still play wrong on a device.
+   */
   const manifestPath = resolve(REPO_ROOT, 'tools/video-fixtures/out-abr/manifest.json');
   let manifest = null;
   try {
@@ -187,27 +254,16 @@ section('Episode duration matches the media served');
     manifest = null;
   }
 
-  if (!check('the ABR fixture manifest is present', manifest !== null, manifestPath)) {
+  if (manifest === null) {
+    skip('generated ABR media matches the fixture spec', 'no out-abr/manifest.json');
     process.stdout.write(FIXTURE_HINT);
   } else {
-    for (const fixture of FIXTURES) {
-      const real = manifest.episodes.find((episode) => episode.id === fixture.id);
+    for (const spec of ABR_EPISODES) {
+      const real = manifest.episodes.find((episode) => episode.id === spec.id);
       check(
-        `FIXTURES ${fixture.id} duration ${fixture.durationSec}s matches the generated media`,
-        real !== undefined && real.durationSeconds === fixture.durationSec,
-        real ? `manifest says ${real.durationSeconds}s` : 'not in the manifest',
-      );
-    }
-
-    for (const drama of MOCK_CATALOGUE.dramas) {
-      const episodes = MOCK_CATALOGUE.episodesByDrama.get(drama.id) ?? [];
-      const mismatched = episodes.filter(
-        (episode) => episode.durationSec !== fixtureForEpisode(episode.episodeNumber).durationSec,
-      );
-      check(
-        `${drama.slug}: every episode's durationSec matches its fixture`,
-        mismatched.length === 0,
-        mismatched.map((e) => `ep${e.episodeNumber}=${e.durationSec}s`).join(', '),
+        `generated media ${spec.id} is ${spec.duration}s, as the spec declares`,
+        real !== undefined && real.durationSeconds === spec.duration,
+        real ? `manifest says ${real.durationSeconds}s — out-abr/ is stale` : 'not in the manifest',
       );
     }
   }
@@ -321,6 +377,8 @@ section('Playback tickets');
 // ──────────────────────────────── Result ─────────────────────────────────
 
 process.stdout.write(
-  `\n${checks - failures}/${checks} checks passed${failures > 0 ? `, ${failures} FAILED` : ''}\n`,
+  `\n${checks - failures}/${checks} checks passed` +
+    `${failures > 0 ? `, ${failures} FAILED` : ''}` +
+    `${skipped > 0 ? `, ${skipped} skipped (fixtures not generated here)` : ''}\n`,
 );
 process.exit(failures > 0 ? 1 : 0);

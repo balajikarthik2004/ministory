@@ -35,6 +35,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, readFile, rm, access, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { ABR_EPISODES } from './episodes.abr.mjs';
 
 const args = process.argv.slice(2);
 const outFlag = args.indexOf('--out');
@@ -85,13 +86,15 @@ const LADDER = [
  * durations and audio tones, so episode identity is not a new variable in the
  * ABR-vs-single-variant comparison. Only the encoding ladder differs.
  */
-const EPISODES = [
-  { id: 'ep01', label: 'Ep 1 - ABR ladder', duration: 30, tone: 440 },
-  { id: 'ep02', label: 'Ep 2 - ABR ladder', duration: 45, tone: 554 },
-  { id: 'ep03', label: 'Ep 3 - ABR ladder', duration: 20, tone: 659 },
-  { id: 'ep04', label: 'Ep 4 - ABR ladder', duration: 60, tone: 880 },
-  { id: 'ep05', label: 'Ep 5 - ABR ladder', duration: 90, tone: 988 },
-];
+/**
+ * The episode specification now lives in `episodes.abr.mjs` so that
+ * `tools/verify-mock-catalogue.mjs` can compare the mock catalogue's
+ * durations against it without importing this module — which would run
+ * ffmpeg, since `main()` is invoked at the bottom of this file.
+ *
+ * Same values as before, one source of truth instead of two.
+ */
+const EPISODES = ABR_EPISODES;
 
 function run(cmd, cmdArgs) {
   return new Promise((resolve, reject) => {
