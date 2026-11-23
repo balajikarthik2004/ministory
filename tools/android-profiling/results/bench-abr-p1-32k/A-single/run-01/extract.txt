@@ -1,0 +1,252 @@
+{
+  "experimentId": "A-single",
+  "startedAt": "2026-11-15T12:04:44.152Z",
+  "durationMs": 35376,
+  "timeToFirstFrameMs": {
+    "count": 30,
+    "minMs": 680,
+    "maxMs": 1011,
+    "meanMs": 755,
+    "p50Ms": 746,
+    "p75Ms": 769
+  },
+  "transitionLatencyMs": {
+    "count": 30,
+    "minMs": 681,
+    "maxMs": 1011,
+    "meanMs": 755,
+    "p50Ms": 746,
+    "p75Ms": 769
+  },
+  "episodesStarted": 30,
+  "transitions": 30,
+  "playbackErrors": 0,
+  "audioOverlapIncidents": 0,
+  "stalls": 0,
+  "playersCreated": 1,
+  "playersReleased": 1,
+  "renditions": {
+    "initial": "720x1280",
+    "switches": [
+      {
+        "at": 1957,
+        "from": null,
+        "to": "720x1280",
+        "episodeId": "ep02#1"
+      },
+      {
+        "at": 3175,
+        "from": null,
+        "to": "720x1280",
+        "episodeId": "ep03#2"
+      },
+      {
+        "at": 4246,
+        "from": null,
+        "to": "720x1280",
+        "episodeId": "ep04#3"
+      },
+      {
+        "at": 5375,
+        "from": null,
+        "to": "720x1280",
+        "episodeId": "ep05#4"
+      },
+      {
+        "at": 6501,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep01#5"
+      },
+      {
+        "at": 7645,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep02#6"
+      },
+      {
+        "at": 8785,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep03#7"
+      },
+      {
+        "at": 9896,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep04#8"
+      },
+      {
+        "at": 11064,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep05#9"
+      },
+      {
+        "at": 12253,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep01#10"
+      },
+      {
+        "at": 13388,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep02#11"
+      },
+      {
+        "at": 14547,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep03#12"
+      },
+      {
+        "at": 15670,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep04#13"
+      },
+      {
+        "at": 16843,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep05#14"
+      },
+      {
+        "at": 17961,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep01#15"
+      },
+      {
+        "at": 19120,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep02#16"
+      },
+      {
+        "at": 20284,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep03#17"
+      },
+      {
+        "at": 21412,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep04#18"
+      },
+      {
+        "at": 22553,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep05#19"
+      },
+      {
+        "at": 23669,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep01#20"
+      },
+      {
+        "at": 24815,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep02#21"
+      },
+      {
+        "at": 25924,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep03#22"
+      },
+      {
+        "at": 27053,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep04#23"
+      },
+      {
+        "at": 28211,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep05#24"
+      },
+      {
+        "at": 29364,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep01#25"
+      },
+      {
+        "at": 30454,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep02#26"
+      },
+      {
+        "at": 31581,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep03#27"
+      },
+      {
+        "at": 32787,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep04#28"
+      },
+      {
+        "at": 33949,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep05#29"
+      },
+      {
+        "at": 35077,
+        "from": null,
+        "to": "480x854",
+        "episodeId": "ep01#30"
+      }
+    ],
+    "switchCount": 30,
+    "timeMsByRendition": {
+      "720x1280": 1851,
+      "480x854": 12160
+    },
+    "dominant": "480x854",
+    "available": [
+      {
+        "label": "360x640",
+        "width": 360,
+        "height": 640,
+        "peakBitrate": 431648,
+        "averageBitrate": 392093
+      },
+      {
+        "label": "480x854",
+        "width": 480,
+        "height": 854,
+        "peakBitrate": 769296,
+        "averageBitrate": 691489
+      },
+      {
+        "label": "720x1280",
+        "width": 720,
+        "height": 1280,
+        "peakBitrate": 1325776,
+        "averageBitrate": 1259049
+      },
+      {
+        "label": "1080x1920",
+        "width": 1080,
+        "height": 1920,
+        "peakBitrate": 2721488,
+        "averageBitrate": 2601469
+      }
+    ]
+  }
+}
+
+events captured: 261
+event types: {"player-created":1,"source-set":31,"status-change":54,"video-track-change":31,"transition-start":30,"first-frame":30,"transition-complete":30,"playing-change":53,"player-released":1}

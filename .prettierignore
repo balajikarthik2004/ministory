@@ -11,3 +11,14 @@ pnpm-lock.yaml
 # produces large diffs that hide real content changes in review.
 CLAUDE.md
 docs/
+
+# Generated HLS fixtures. The segment files are MPEG transport streams that
+# happen to use the .ts extension, so Prettier tries to parse 615 binary files
+# as TypeScript and fails the whole run.
+tools/video-fixtures/out/
+tools/video-fixtures/out-abr/
+
+# Benchmark artefacts from the M1.2/M1.3 player spikes. These are raw measured
+# output and the evidence behind docs/VIDEO_PLAYER_SPIKE.md. Reformatting them
+# would edit a recorded result, which is not something a formatter gets to do.
+tools/android-profiling/results/

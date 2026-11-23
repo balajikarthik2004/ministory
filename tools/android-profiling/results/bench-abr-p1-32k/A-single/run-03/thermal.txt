@@ -1,0 +1,24 @@
+--- before run (app stopped) ---
+battery_temp_decidegC: 342
+battery_level: 73
+thermal_status: Unknown command: get-current-status
+	Temperature{mValue=33.5, mType=2, mName=battery, mStatus=0}
+	Temperature{mValue=59.8, mType=0, mName=CPU0, mStatus=0}
+	Temperature{mValue=59.4, mType=0, mName=CPU1, mStatus=0}
+	Temperature{mValue=57.9, mType=0, mName=CPU2, mStatus=0}
+	Temperature{mValue=58.3, mType=0, mName=CPU3, mStatus=0}
+	Temperature{mValue=57.9, mType=0, mName=CPU4, mStatus=0}
+	Temperature{mValue=59.4, mType=0, mName=CPU5, mStatus=0}
+	Temperature{mValue=62.5, mType=0, mName=CPU6, mStatus=0}
+--- after run ---
+battery_temp_decidegC: 343
+battery_level: 73
+thermal_status: Unknown command: get-current-status
+	Temperature{mValue=33.5, mType=2, mName=battery, mStatus=0}
+	Temperature{mValue=59.8, mType=0, mName=CPU0, mStatus=0}
+	Temperature{mValue=59.4, mType=0, mName=CPU1, mStatus=0}
+	Temperature{mValue=57.9, mType=0, mName=CPU2, mStatus=0}
+	Temperature{mValue=58.3, mType=0, mName=CPU3, mStatus=0}
+	Temperature{mValue=57.9, mType=0, mName=CPU4, mStatus=0}
+	Temperature{mValue=59.4, mType=0, mName=CPU5, mStatus=0}
+	Temperature{mValue=62.5, mType=0, mName=CPU6, mStatus=0}

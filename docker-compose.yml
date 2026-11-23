@@ -1,0 +1,63 @@
+# MiniDrama — local development infrastructure.
+#
+# Local development ONLY. No image, volume or port here is intended to run in
+# production; production hosting is an open decision (SYSTEM_ARCHITECTURE.md §11)
+# and nothing in this file should be taken as having pre-decided it.
+#
+# Free-first (CLAUDE.md §18/§19): the official Postgres image, run locally.
+# No managed database, no cloud resource, ₹0.
+#
+#   cp .env.example .env     # then edit the password
+#   docker compose up -d
+#   docker compose ps        # wait for postgres to report (healthy)
+#
+# Credentials come from the root .env, which is gitignored. Compose substitutes
+# ${VAR} from that file; the `:?` suffix makes a missing variable a loud startup
+# error rather than a container running on a silent default.
+
+name: minidrama
+
+services:
+  postgres:
+    image: postgres:16-alpine # pinned major: DATABASE_SCHEMA.md targets PG 16
+    container_name: minidrama-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?missing POSTGRES_USER — copy .env.example to .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing POSTGRES_PASSWORD — copy .env.example to .env}
+      POSTGRES_DB: ${POSTGRES_DB:?missing POSTGRES_DB — copy .env.example to .env}
+      # Deterministic collation. Without this, ORDER BY on text can differ
+      # between a developer's machine and CI, which turns into a flaky test
+      # that nobody can reproduce.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+
+    # Bound to loopback deliberately. "5432:5432" would publish the database on
+    # every interface including Wi-Fi — a development database with a weak
+    # password reachable from the local network.
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      # pg_isready checks the server accepts connections, which is what the app
+      # actually needs. `$$` escapes the substitution so the shell inside the
+      # container expands it, not Compose.
+      test:
+        ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -q']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    # A development database is not worth an OOM kill of the developer's editor.
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+volumes:
+  postgres-data:
+    name: minidrama-postgres-data

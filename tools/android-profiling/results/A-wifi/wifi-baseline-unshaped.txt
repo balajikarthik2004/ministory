@@ -1,0 +1,16 @@
+Unshaped Wi-Fi baseline, measured FROM THE DEVICE (adb shell curl)
+Date: 2026-11-15
+Path: OnePlus Nord CE 3 Lite wlan0 10.251.177.27 -> PC Wi-Fi 10.251.177.203:8787
+Server profile: none (no shaping)
+File: ep01/segment000.ts (722,296 bytes)
+
+  ttfb=0.165104s total=0.438049s rate=1648893 B/s
+  ttfb=0.106672s total=0.473789s rate=1524509 B/s
+  ttfb=0.048758s total=0.358854s rate=2012785 B/s
+
+Summary:
+  TTFB          48 - 165 ms  (mean ~107 ms)
+  Throughput    1.52 - 2.01 MB/s  =  12.2 - 16.1 Mbit/s
+
+This is the PHYSICAL path cost. All shaped figures below are ADDITIVE to this:
+a configured 120 ms response delay sits on top of ~107 ms of real Wi-Fi latency.

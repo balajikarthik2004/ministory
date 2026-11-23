@@ -19,4 +19,6 @@ overrides:
 # arbitrary code execution at install time. Only these are allowed to run, and
 # each is a build-tool binary that genuinely needs one.
 allowBuilds:
+  '@prisma/engines': true
   esbuild: true
+  prisma: true

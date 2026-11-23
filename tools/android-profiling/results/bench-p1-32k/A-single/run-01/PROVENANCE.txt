@@ -1,0 +1,9 @@
+This run is a COPY of tools/android-profiling/results/A-wifi/p1-burst32k/
+It is the corrected-burst Experiment A run completed before the 3-run
+benchmark series began, reused as A run 1 at the user's direction.
+
+Conditions identical to all other runs in bench-p1-32k/:
+  P1, 1.5 Mbit/s, fixed 32,768 B burst, 120 ms response delay,
+  same five fixtures, 30 automated swipes, OnePlus Nord CE 3 Lite.
+
+The original directory is preserved unaltered.

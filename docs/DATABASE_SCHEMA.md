@@ -1,8 +1,8 @@
 # MiniDrama — Database Schema
 
-**Status:** Proposal v0.1 — awaiting approval
-**Engine:** PostgreSQL 16 · **ORM:** Prisma
-**Last updated:** 2026-11-15
+**Status:** v0.2 — §3 is the approved target. 13 of its models are implemented and migrated; the rest are scheduled. See §9.
+**Engine:** PostgreSQL 16 · **ORM:** Prisma 7.10.1 (driver adapter `@prisma/adapter-pg`)
+**Last updated:** 2026-11-15 (M1.3)
 
 Models marked **[+]** are additions beyond the entity list in CLAUDE.md §8 and need approval. Each one states why it exists.
 
@@ -77,6 +77,10 @@ enum UnlockSource   { COIN REWARDED_AD PROMO SUBSCRIPTION }
 enum CoinTxnType    { PURCHASE REWARD_AD SPEND REFUND ADMIN_GRANT }
 enum ReportReason   { INAPPROPRIATE COPYRIGHT MISLEADING TECHNICAL OTHER }
 enum ReportStatus   { OPEN REVIEWING RESOLVED DISMISSED }
+// SUPERSEDED in M2.3 — see the PlaybackEvent note below and DECISIONS.md ADR-26.
+// Implemented as eight lower_snake_case values:
+//   playback_started  playback_paused  playback_resumed  playback_progress
+//   playback_completed  playback_failed  episode_changed  playback_abandoned
 enum PlaybackEventType { START HEARTBEAT PAUSE COMPLETE ERROR }
 enum NotificationType { NEW_EPISODE DRAMA_RELEASE SUBSCRIPTION SYSTEM }
 
@@ -605,7 +609,23 @@ model ContentReport {
 
 // ───────────────────────── Analytics ─────────────────────────
 
-/// [+] ARCH §8. Raw events — partitioned by month, 90-day retention.
+/// [+] ARCH §8. Raw events — 90-day retention.
+///
+/// SUPERSEDED in M2.3. The implemented model (apps/backend/prisma/schema.prisma)
+/// differs in four ways, each forced by the client that shipped in M2.2:
+///
+///   * `eventId String @id` — the client's UUID is the primary key, so
+///     idempotency is a database constraint rather than an application check.
+///     Delivery is at-least-once (ADR-25) and retries are normal traffic.
+///   * `occurredAt` (device clock) and `receivedAt` (server clock) are stored
+///     separately. A device clock can be wrong or deliberately altered.
+///   * `dramaId` is denormalised onto the row; every rollup groups by drama
+///     and reaching it through Season would be two joins on the largest table.
+///   * `deltaSec` and `quality` are absent — the client does not produce them,
+///     and an always-null column looks like data.
+///
+/// Also carries `platform` and `appVersion`, an allow-listed context with no
+/// device or personal identifier (M2.2 §2).
 model PlaybackEvent {
   id         BigInt            @id @default(autoincrement())
   userId     String?
@@ -692,11 +712,15 @@ Postgres full-text search is sufficient to well past the launch target. Reach fo
 
 ## 6. Data Lifecycle & Privacy
 
-**Account deletion (AUTH-09, DPDP).** On request: hard-delete `UserProfile`, `Session`, `Device`, `Favorite`, `WatchHistory`, `DramaProgress`, `Notification`; anonymise `User` (null the identifiers, status `DELETED`, retain the id); retain `Payment` and `Subscription` with the user reference intact for the statutory financial-record period; null `PlaybackEvent.userId`. Deletion completes within 30 days and is logged in `AdminAuditLog`.
+**Account deletion (AUTH-09).** Implemented in M2.6 — see §9.6 for exactly what the code does. On request: hard-delete `UserProfile`, `Session`, `VerificationToken`, `Favorite`, `WatchHistory`, `DramaProgress` (and, when they exist, `Device` and `Notification`); anonymise `User` (null the identifiers, status `DELETED`, retain the id); retain `Payment` and `Subscription` with the user reference intact (see the retention note below); null `PlaybackEvent.userId`. Recorded in `AccountDeletion`, which holds no direct identifier.
 
-**Retention.** `PlaybackEvent` 90 days · `SearchQuery` 180 days · `Session` purged after expiry + 30 days · `AdminAuditLog` 2 years.
+**Deletion is immediate, not scheduled.** The original "within 30 days" wording described a ceiling; M2.6 decision D1 made the whole operation synchronous, so the ceiling is satisfied with no job infrastructure (ADR-08 defers pg-boss). Only the `PlaybackEvent` de-linking runs after the transaction, and it is observable and reconcilable (ADR-49).
+
+**Retention.** `PlaybackEvent` 90 days · `SearchQuery` 180 days · `Session` purged after expiry + 30 days · `AdminAuditLog` 2 years · `AccountDeletion` 2 years, with its receipt hash nulled after 30 days.
 
 **Minimisation.** IP addresses are stored hashed, never raw. No precise location is collected.
+
+**Legal basis — unverified, and separated deliberately.** This document previously attributed retention rules to the DPDP Act and to a "statutory financial-record period". **Neither has been verified by this project**, and the specific figure once quoted for financial records has been withdrawn. The technical design does not depend on them: retaining `Payment` and `Subscription` with `User.id` as their referent is required by *any* non-zero retention obligation, and erasing everything else is the defensible position whatever the eventual answer. The periods themselves need confirmation from someone qualified before M7 ships payments, and before any of this appears in a published privacy policy. See `M2.6_ACCOUNT_DELETION_DESIGN.md` §11 for the full list of flagged assumptions.
 
 ---
 
@@ -714,3 +738,204 @@ These operations are all-or-nothing (CLAUDE.md §7):
 ## 8. Migration Policy
 
 Prisma Migrate, forward-only. Every migration is reviewed in its PR as SQL, not just as a schema diff. No destructive change (drop column, narrow type, add a non-null column without a default) ships in the same release as the code that stops using it: expand, deploy, backfill, contract. Migrations run against a staging branch database before production, and every migration PR states its rollback plan.
+
+---
+
+## 9. Implementation status (M1.3)
+
+Migration `20261115153845_init_catalogue_identity_engagement` is the first
+migration. It creates **13 tables, 6 enums, 18 foreign keys and 52 indexes**,
+and applies cleanly to an empty database.
+
+The live schema lives in `apps/backend/prisma/schema.prisma`. This document
+remains the design authority; where the two disagree, one of them is a bug.
+
+### 9.1 What is in migration 1
+
+| Group | Models |
+|---|---|
+| Identity | `User`, `UserProfile` |
+| Catalogue | `Language`, `Category`, `Drama`, `DramaTranslation`, `DramaCategory`, `Season`, `Episode`, `Subtitle` |
+| Engagement | `WatchHistory`, `DramaProgress`, `Favorite` |
+
+### 9.2 What is deferred, and to when
+
+| Models | Milestone | Why not now |
+|---|---|---|
+| ~~`Session`~~, `VerificationToken` | ~~M3~~ **Landed in M2.5** | Migration `20261117060610_add_auth_sessions_and_verification_tokens`. See §9.3. |
+| `Device` | M6 | Push targets; nothing sends a notification yet. |
+| `AdminUser`, `AdminAuditLog` | M5 | No admin application exists to write to them. |
+| `CastMember`, `DramaCast` | M5 | Admin content management owns cast entry. |
+| `SubscriptionPlan`, `Subscription`, `Payment`, `CoinWallet`, `CoinTransaction`, `EpisodeUnlock`, `Advertisement` | M7 | Monetisation. |
+| `Notification`, `ContentReport` | M6 | Engagement and moderation. |
+| `PlaybackEvent`, `EpisodeDailyStat`, `SearchQuery` | M6+ | Analytics; `PlaybackEvent` also wants month partitioning, which is a migration of its own. |
+
+### 9.3 What M2.5 added
+
+Additive only — two enums, three nullable columns on `User`, two new tables.
+No existing migration was touched.
+
+**`User` gained** `passwordHash` (Argon2id PHC string, nullable because a
+guest has none), `emailVerifiedAt`, and `tokensValidFrom` — the last being
+what makes a password change invalidate access tokens already in circulation
+instead of waiting out their fifteen minutes (ADR-40).
+
+**`Session`** is the refresh-token store from §3, with three additions the
+document did not anticipate:
+
+- `familyId` groups a rotation chain, so reuse detection can revoke all of it.
+- `parentId` links a session to the one it replaced, for walking a chain.
+- `revokedReason` records *why*, because `REFRESH_REUSE` is a security event
+  and must be distinguishable from an ordinary logout after the fact.
+
+**`VerificationToken`** holds password-reset and email-verification tokens in
+one table with a `purpose` enum. One table rather than two: the
+issue/consume/expire logic is identical, and a shared table means one place
+where single use is enforced. It stores the `email` the token was issued
+against, so a link sent to an old address cannot verify a new one.
+
+**`Session.refreshHash` is SHA-256, not the argon2 hash §3 specifies.** That
+deviation has its own reasoning in ADR-38 — in short, a salted hash cannot be
+looked up by hashing what the client presented, which would make reuse
+detection impossible rather than merely slow.
+
+**`Device` stays deferred.** §3 defines it as a push-target table and nothing
+sends notifications yet. Guest sessions bind to an install through
+`Session.deviceId` instead, which needs no second table.
+
+**This is a known, deliberate deviation from ADR-10**, which says `CoinWallet`,
+`CoinTransaction` and `EpisodeUnlock` should exist "from migration 1". The M1.3
+brief scoped them out. The reasoning in ADR-10 was that retrofitting a wallet
+onto a system holding live payment data is expensive — and there will be no
+payment data before M7, so the additive migration that adds them is cheap right
+up until the moment it isn't. `Episode.coinPrice` is present now so that the
+per-episode pricing model is not retrofitted onto a live catalogue.
+
+### 9.3 Deviations from §3, with reasons
+
+**1. Episode video columns are provider-neutral.** §3 specifies `muxAssetId`,
+`muxUploadId` and `muxPlaybackId`. The implementation uses `videoProvider`
+(`"local"` | `"mux"`), `videoAssetId`, `videoUploadId` and `videoPlaybackId`.
+
+CLAUDE.md §19 requires a provider-independent video abstraction and ADR-09 puts
+Mux behind a `VideoProvider` interface that is not installed — development runs
+on locally generated FFmpeg HLS. Columns named after one vendor would either
+hold local fixture paths under a Mux name for the whole of development, or
+force a rename migration the day the provider changes. The shape is unchanged;
+only the names are vendor-neutral, and `videoProvider` records which vendor a
+row's identifiers belong to.
+
+**2. `DramaProgress.lastEpisodeId` is a real foreign key.** §3 declares it as a
+bare `String` with no relation. It is now a relation to `Episode` with
+`onDelete: Restrict`. Without the constraint, Continue Watching can resume into
+an episode that no longer exists. `Restrict` rather than `Cascade` because
+deleting one episode must not erase a viewer's progress through an entire
+drama — it should fail loudly and make the caller decide.
+
+**3. The entity names in the M1.3 brief map onto §3 as follows.** The brief
+asked for `Genre / Category`, `DramaLanguage`, `WatchProgress` and
+`UserFavorite`. This document's names won, since it is the design authority:
+
+| Brief | Implemented as | Note |
+|---|---|---|
+| Genre / Category | `Category` | One model. A genre is a category here; two tables holding the same nine rows is a distinction the UI never makes. |
+| DramaLanguage | `Drama.languageId` + `DramaTranslation` | PRD PD-4 decided this: one production language per drama, localised metadata in a translation table, so dubbed and subbed variants do not split a title's analytics. |
+| WatchProgress | `DramaProgress` | Same model, §3's name. |
+| UserFavorite | `Favorite` | Same model, §3's name. |
+
+### 9.4 Not yet implemented from this document
+
+- **The `pg_trgm` extension and `drama_title_trgm_idx`** (§4). Search is M6.
+  Adding the extension needs a superuser connection, which is worth settling
+  deliberately rather than slipping into the first migration.
+- **`PlaybackEvent` monthly partitioning** (§3). Prisma does not model
+  partitions; this will be raw SQL in the migration that creates the table.
+- **The retention and deletion jobs** in §6. They describe behaviour, not
+  schema, and need a job runner (ADR-08, deferred).
+
+### 9.5 Counter integrity
+
+`Drama.totalEpisodes` and `Drama.favoriteCount` are denormalised and must be
+written in the same transaction as the rows they count (§7). The seed already
+follows this rule, and it is the first place a future contributor is likely to
+break it.
+
+**M2.6 added the first operation that must respect it at scale.** Account
+deletion removes a user's favourites in bulk, and a plain `deleteMany` would
+leave every affected drama's counter permanently inflated — nothing recomputes
+it. The deletion transaction reads the affected `dramaId`s first and
+decrements each by one in the same transaction (`Favorite` is keyed
+`(userId, dramaId)`, so every counter moves by exactly one). A test seeds two
+users favouriting one drama and asserts the survivor is still counted.
+
+Note also that **the `User` cascades never fire on deletion**, because the
+`User` row is anonymised rather than dropped. That is deliberate: a cascade
+would take the favourite rows and skip the counter.
+
+---
+
+## 10. What M2.6 added
+
+### 10.1 `AccountDeletion`
+
+One new table, three new enum values, in migration
+`20261118045211_add_account_deletion_audit`. Additive only: two `CREATE TYPE`,
+one `ALTER TYPE ... ADD VALUE`, one `CREATE TABLE`, five indexes. No column was
+dropped, no existing table altered, no data rewritten.
+
+| Field | Why |
+|---|---|
+| `userId` (unique) | The retained, anonymised `User.id`. One deletion per account. |
+| `source` | `IN_APP` / `WEB` / `ADMIN`. Reporting only. |
+| `wasAnonymous` | Guest or registered, for reporting. |
+| `requestedAt`, `completedAt` | Deletion is synchronous (D1), so both are set at once. |
+| `removed*` (5 counts) | How much was removed. Never what. |
+| `playbackStatus` and five companions | The de-linking lifecycle — see §10.2. |
+| `receiptHash` (unique), `receiptExpiresAt` | SHA-256 of the client's deletion receipt id (ADR-47). |
+
+**It holds no direct identifier** — no email, phone, `firebaseUid`, password,
+display name, token, device id, IP hash, or anything watched. A test
+serialises the whole row and asserts the account's address does not appear in
+it, so a column added later that quietly carries one fails on its own.
+
+**No foreign key to `User`**, for the same reason `PlaybackEvent` has none: the
+row records that an account ceased to exist and must not be removable by a
+cascade from the table it describes (ADR-48).
+
+### 10.2 The playback de-linking lifecycle
+
+`PlaybackEvent.userId` is nulled after the deletion transaction commits,
+because it is the only unbounded part of the work. The status fields exist so
+an interrupted sweep is visible rather than silent:
+
+```
+PENDING ──► IN_PROGRESS ──► COMPLETED
+                │
+                └────────► FAILED  (playbackErrorCode, a stable code only)
+```
+
+`pnpm --filter @minidrama/backend reconcile:deletions` finishes anything that
+is not `COMPLETED`, **and re-checks rows that claim `COMPLETED` against the
+events themselves** — a status that lies is worse than one that is behind. It
+is idempotent, takes `--dry-run` and `--prune`, and exits non-zero when
+anything is left unrepaired (ADR-49).
+
+It deliberately reports but never touches events belonging to a `DELETED` user
+with **no** `AccountDeletion` row: those are guests retired by
+`mergeGuestInto`, whose events were re-pointed at the account the person owns.
+
+### 10.3 Deletion order, as implemented
+
+Inside one `prisma.$transaction`:
+
+1. **Gate, lock and scrub in one statement** — a conditional `updateMany` on
+   `status`, which takes the row lock, makes the operation idempotent without a
+   read-then-check, and nulls the identifiers in the same breath. A concurrent
+   second deletion blocks here and then matches zero rows.
+2. `VerificationToken`, then `Session` — hard delete.
+3. `UserProfile` — `deleteMany`, so a missing profile cannot fail a deletion.
+4. `Favorite` — read `dramaId`s, delete, decrement `Drama.favoriteCount`.
+5. `DramaProgress`, then `WatchHistory` — hard delete.
+6. `AccountDeletion` — insert, with the receipt hash if one was presented.
+
+Then, outside the transaction: the `PlaybackEvent` sweep.

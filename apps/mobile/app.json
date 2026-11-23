@@ -4,10 +4,7 @@
     "slug": "minidrama",
     "version": "0.1.0",
     "scheme": "minidrama",
-    "platforms": [
-      "android",
-      "ios"
-    ],
+    "platforms": ["android", "ios"],
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#090A0F",
@@ -20,10 +17,7 @@
       "bundleIdentifier": "app.minidrama.mobile",
       "supportsTablet": false
     },
-    "plugins": [
-      "expo-router",
-      "expo-video"
-    ],
+    "plugins": ["expo-router", "expo-video", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     }

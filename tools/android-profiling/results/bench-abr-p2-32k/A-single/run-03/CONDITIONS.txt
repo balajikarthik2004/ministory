@@ -1,0 +1,6 @@
+profile=p2
+fixtures=out-abr
+server_root_health={"status":"ok","root":"C:\\Users\\BalajiKrishnan\\Desktop\\Projects\\new\\build\\tools\\video-fixtures\\out-abr","shaping":"p2"}
+started_at=2026-11-15T17:53:26+05:30
+base_url=http://10.251.177.203:8787 (device wlan0 10.251.177.27)
+mCurrentFocus=Window{e975ec9 u0 host.exp.exponent/host.exp.exponent.experience.ExperienceActivity}

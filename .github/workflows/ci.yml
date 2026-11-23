@@ -1,0 +1,399 @@
+# MiniDrama — continuous integration (Milestone 1.4).
+#
+# WHAT THIS IS FOR. Every command here is one a developer can already run on
+# their own machine. The value is not the commands; it is that they run on
+# every change, on a machine with nothing left over from the last run. A clean
+# checkout, a frozen lockfile and an empty database is a combination no laptop
+# ever reproduces, and it is where this catches things.
+#
+# COST (CLAUDE.md §18/§19). GitHub-hosted runners only, within the free
+# allowance. No third-party CI service, no deployment, no mobile build
+# publishing, no external account of any kind. ₹0.
+#
+# SECRETS. This workflow reads no repository secret. The only credential-shaped
+# values are the throwaway Postgres password and JWT signing key defined below
+# for the service containers, both destroyed with the runner. Nothing here can
+# leak a real credential because nothing here is given one.
+#
+# NO TURBO REMOTE OR RESTORED CACHE, DELIBERATELY. The pnpm store is cached,
+# because re-downloading packages proves nothing. Turbo's task cache is not,
+# because a cache hit makes Turbo replay the previous logs instead of running
+# the task — which is exactly right on a laptop and wrong for a gate whose
+# whole job is to have actually run. The repo is small enough that the saving
+# would be seconds.
+#
+# WHAT IS DELIBERATELY NOT HERE. Sentry and a staging environment are listed
+# against M1.4 in DEVELOPMENT_ROADMAP.md §2. Both need an external account,
+# which CLAUDE.md §18 defers until explicitly approved. They are a separate
+# piece of work, not a missing step in this file.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A second push to the same branch makes the first run's result irrelevant.
+# Cancelling it is both faster feedback and fewer runner minutes. `main` is
+# excluded: a push there should always produce a complete, recorded result.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Read-only. This workflow does not comment, tag, release or deploy, so it has
+# no reason to hold a token that could.
+permissions:
+  contents: read
+
+env:
+  # Matches the local toolchain and package.json `engines` (>=22). Pinned to a
+  # major rather than `lts/*` so a runner image update cannot silently change
+  # the Node that `--experimental-transform-types` runs under.
+  NODE_VERSION: '24'
+
+  # ON THE PASSWORD BELOW, which appears as a literal in two jobs:
+  # `ci_ephemeral_not_a_secret` is not a secret and is deliberately not stored
+  # as one. It reaches a container that lives for the length of one job, is
+  # reachable only from that runner's loopback, holds nothing but migration
+  # structure, and is destroyed with the VM. Putting it in `secrets` would
+  # imply it protects something; it does not, and a reader needs to be able to
+  # see what the job connects to. It is written out at each use rather than
+  # held here, because the `env` context is not reliably available inside a
+  # `services:` block and a half-interpolated connection string fails in a
+  # confusing way.
+
+  TURBO_TELEMETRY_DISABLED: '1'
+  EXPO_NO_TELEMETRY: '1'
+  DO_NOT_TRACK: '1'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # Code quality: lint, typecheck, formatting.
+  #
+  # Turbo, not six per-package commands. turbo.json already declares that
+  # lint and typecheck depend on `^build` and `db:generate` — contracts and
+  # ui-tokens compile to dist/ before anything imports them, and the Prisma
+  # client generates before the backend typechecks. Spelling that ordering
+  # out again here would be a second copy of it, free to drift.
+  # ─────────────────────────────────────────────────────────────────────
+  quality:
+    name: Lint, typecheck, format
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # `prisma generate` requires a connection string to be present but never
+    # opens it — the client is generated from the schema file. A syntactically
+    # valid URL pointing at a closed port is correct here, and makes it
+    # impossible for this job to reach a database even by accident.
+    env:
+      DATABASE_URL: postgresql://unused:unused@127.0.0.1:1/unused
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Format check
+        run: pnpm format:check
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Backend tests, against a real Postgres.
+  #
+  # The suite's own harness (tests/support/test-database.ts) derives a
+  # SEPARATE DATABASE — minidrama_test — from DATABASE_URL, creates it, and
+  # applies the committed migrations to it with `migrate deploy`. None of that
+  # is special-cased for CI: the service container below simply stands in for
+  # the developer's docker-compose Postgres.
+  #
+  # That is deliberate. The three guards ADR-30 describes — the URL check, the
+  # post-connection `SELECT current_database()`, and `deploy` rather than
+  # `dev` — are the code that protects a developer's data, so they are the
+  # code that should be getting exercised on every run.
+  # ─────────────────────────────────────────────────────────────────────
+  test-backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine # pinned to docker-compose.yml / DATABASE_SCHEMA.md
+        env:
+          POSTGRES_USER: minidrama
+          POSTGRES_PASSWORD: ci_ephemeral_not_a_secret
+          POSTGRES_DB: minidrama
+          # Matches docker-compose.yml. Deterministic collation, so an
+          # ORDER BY on text cannot sort differently here than on a laptop
+          # and turn into a flaky test nobody can reproduce.
+          POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U minidrama -d minidrama -q"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://minidrama:ci_ephemeral_not_a_secret@127.0.0.1:5432/minidrama
+      # Required with no default by src/config/env.ts, minimum 32 characters.
+      # A literal, because it signs tokens that exist only inside this job and
+      # are verified by the same process seconds later.
+      AUTH_JWT_SECRET: ci-only-signing-key-not-used-anywhere-real-0123456789
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Through Turbo so `^build` (contracts) and `db:generate` run first.
+      # `pnpm --filter ... run test` would skip both and fail on a missing
+      # @minidrama/contracts/dist.
+      - name: Run backend test suite
+        run: pnpm exec turbo run test --filter=@minidrama/backend
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Mobile tests. No services.
+  #
+  # tests/integration/backend.test.ts probes /health with a 2s timeout and
+  # skips itself when nothing answers — its documented behaviour, so that a
+  # developer working on UI is not handed a red suite because Docker is off.
+  # In CI that means 10 tests report skipped. They are covered from the other
+  # side by the backend suite, which drives the same endpoints directly.
+  # ─────────────────────────────────────────────────────────────────────
+  test-mobile:
+    name: Mobile tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run mobile test suite
+        run: pnpm exec turbo run test --filter=@minidrama/mobile
+
+      # Parses the M2.1 mock catalogue through the real contracts and checks
+      # that every poster it references is on disk at a sensible size. Cheap,
+      # and the alternative is finding out on a device at app start — the
+      # slowest feedback loop in the project.
+      - name: Verify mock catalogue
+        run: pnpm --filter @minidrama/mobile run verify:mocks
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Migration verification, against a COMPLETELY EMPTY database.
+  #
+  # This is the job M1.4 exists for. Four migrations are committed, all of
+  # them immutable (docs/MIGRATIONS.md §5), and until now nothing proved they
+  # apply in order to a database with nothing in it.
+  #
+  # The database is created empty by the service container and destroyed with
+  # the runner. `prisma migrate reset` appears nowhere in this job, or
+  # anywhere else in this file — it drops and reseeds, and a command that can
+  # do that has no business in automation.
+  # ─────────────────────────────────────────────────────────────────────
+  migrations:
+    name: Migration verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: minidrama
+          POSTGRES_PASSWORD: ci_ephemeral_not_a_secret
+          # A database name of its own, distinct from the backend test job's.
+          # No container is shared between jobs, but naming them apart means a
+          # command copied from one cannot quietly land in the other.
+          POSTGRES_DB: minidrama_ci_migrations
+          POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U minidrama -d minidrama_ci_migrations -q"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://minidrama:ci_ephemeral_not_a_secret@127.0.0.1:5432/minidrama_ci_migrations
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      # Proves the database really is empty before anything is applied.
+      #
+      # Without this, pointing the job at a populated database would make
+      # `migrate deploy` report "No pending migrations", every later step pass,
+      # and the job go green having verified nothing. A green run that tested
+      # nothing is worse than a red one. The script only reads.
+      - name: Confirm the database is empty
+        run: pnpm run db:verify:empty
+
+      - name: Validate schema
+        run: pnpm run db:validate
+
+      # The migration gate. Applies every committed migration, in order, to
+      # the empty database, and fails on the first one that errors.
+      - name: Apply all migrations
+        run: pnpm run db:migrate:deploy
+
+      - name: Migration status
+        run: pnpm run db:migrate:status
+
+      # THE DRIFT CHECK, and the strongest assertion in this workflow.
+      #
+      # Compares the database the migrations just produced against
+      # schema.prisma. `--exit-code` makes a difference a non-zero exit:
+      # 0 = identical, 2 = drift, 1 = the command itself failed. It fails when
+      # a migration has been hand-edited into disagreeing with the schema, and
+      # when a schema change was committed without the migration that
+      # implements it — the second of which is the ordinary, easy mistake, and
+      # the one nothing else catches.
+      #
+      # PRISMA 7 FLAGS. `--from-database-url` and `--to-schema-datamodel` are
+      # the Prisma 6 spellings and were renamed; passing them makes the CLI
+      # print its help and exit 1, which reads as a broken step rather than a
+      # passing check, but is still worth naming because the old form is what
+      # every pre-7 example online shows. `--from-config-datasource` takes the
+      # URL from prisma.config.ts, which also keeps the connection string —
+      # and its password — off the command line and out of this log.
+      - name: Check migrations reproduce schema.prisma (no drift)
+        run: |
+          set +e
+          pnpm exec prisma migrate diff \
+            --from-config-datasource \
+            --to-schema=prisma/schema.prisma \
+            --exit-code
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ]; then
+            echo "::error title=Migration drift::The committed migrations do not reproduce schema.prisma."
+            echo "The diff above is what is missing from the migrations."
+            echo "Do NOT edit an existing migration to close it (docs/MIGRATIONS.md §5)."
+            echo "Generate a new migration instead."
+            exit 1
+          fi
+          exit "$status"
+
+      - name: Generate Prisma client
+        run: pnpm run db:generate
+
+      # Structural assertion in Postgres' own vocabulary: every model has a
+      # table, every enum has exactly its declared labels, no undeclared
+      # tables, every table has a primary key, foreign keys and indexes are
+      # present, and every migration row finished without rollback.
+      # Expectations are read out of schema.prisma, never hand-listed.
+      - name: Verify tables, enums, indexes and constraints
+        run: pnpm run db:verify
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Build verification.
+  #
+  # Gated on `quality` alone. A broken build is almost always also a failed
+  # typecheck, so spending four minutes on an Expo export to learn that a
+  # second time wastes the runner and the reviewer's attention.
+  #
+  # NOT gated on `migrations` or the test jobs, though an earlier draft was.
+  # Neither predicts a build failure — whether the admin bundle compiles has
+  # nothing to do with whether migration 3 applies — and chaining them would
+  # only serialise two jobs that can run side by side.
+  # ─────────────────────────────────────────────────────────────────────
+  build:
+    name: Builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [quality]
+
+    env:
+      DATABASE_URL: postgresql://unused:unused@127.0.0.1:1/unused
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # backend (tsc), admin (tsc --noEmit && vite build), contracts and
+      # ui-tokens (tsc). Turbo orders them; `db:generate` runs first.
+      - name: Build backend, admin and shared packages
+        run: pnpm build
+
+      # Mobile has no `build` task on purpose — an Expo export takes minutes
+      # and would sit in the middle of every local `pnpm build`. It is a
+      # separate script, invoked explicitly here.
+      #
+      # EXPORT ONLY. This produces a Hermes bundle and the asset manifest, and
+      # so proves the app compiles and every asset it references resolves. It
+      # does not build an APK or AAB, does not touch EAS, and publishes
+      # nothing anywhere.
+      - name: Expo export (Android bundle)
+        run: pnpm --filter @minidrama/mobile run export:android
+
+      # The manifest alone, not the 4 MB bundle: enough to compare asset and
+      # bundle inventories between two runs, small enough to keep. Artifacts
+      # count against storage on a private repository.
+      - name: Upload Expo bundle manifest
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: expo-export-metadata
+          path: apps/mobile/.expo-export/metadata.json
+          retention-days: 14
+          if-no-files-found: warn

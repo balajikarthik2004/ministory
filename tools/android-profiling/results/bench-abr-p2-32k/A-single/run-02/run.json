@@ -1,0 +1,2073 @@
+{
+  "summary": {
+    "experimentId": "A-single",
+    "startedAt": "2026-11-15T12:16:02.124Z",
+    "durationMs": 35284,
+    "timeToFirstFrameMs": {
+      "count": 30,
+      "minMs": 543,
+      "maxMs": 1006,
+      "meanMs": 708,
+      "p50Ms": 680,
+      "p75Ms": 721
+    },
+    "transitionLatencyMs": {
+      "count": 30,
+      "minMs": 543,
+      "maxMs": 1006,
+      "meanMs": 708,
+      "p50Ms": 680,
+      "p75Ms": 721
+    },
+    "episodesStarted": 30,
+    "transitions": 30,
+    "playbackErrors": 0,
+    "audioOverlapIncidents": 0,
+    "stalls": 0,
+    "playersCreated": 1,
+    "playersReleased": 1,
+    "renditions": {
+      "initial": "720x1280",
+      "switches": [
+        {
+          "at": 1730,
+          "from": null,
+          "to": "720x1280",
+          "episodeId": "ep02#1"
+        },
+        {
+          "at": 3002,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep03#2"
+        },
+        {
+          "at": 4086,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep04#3"
+        },
+        {
+          "at": 5243,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep05#4"
+        },
+        {
+          "at": 6424,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep01#5"
+        },
+        {
+          "at": 7497,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep02#6"
+        },
+        {
+          "at": 8639,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep03#7"
+        },
+        {
+          "at": 9767,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep04#8"
+        },
+        {
+          "at": 10947,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep05#9"
+        },
+        {
+          "at": 12265,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep01#10"
+        },
+        {
+          "at": 13191,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep02#11"
+        },
+        {
+          "at": 14399,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep03#12"
+        },
+        {
+          "at": 15502,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep04#13"
+        },
+        {
+          "at": 16648,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep05#14"
+        },
+        {
+          "at": 18129,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep01#15"
+        },
+        {
+          "at": 19080,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep02#16"
+        },
+        {
+          "at": 20034,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep03#17"
+        },
+        {
+          "at": 21149,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep04#18"
+        },
+        {
+          "at": 22325,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep05#19"
+        },
+        {
+          "at": 23496,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep01#20"
+        },
+        {
+          "at": 24607,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep02#21"
+        },
+        {
+          "at": 25785,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep03#22"
+        },
+        {
+          "at": 26906,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep04#23"
+        },
+        {
+          "at": 28039,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep05#24"
+        },
+        {
+          "at": 29207,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep01#25"
+        },
+        {
+          "at": 30428,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep02#26"
+        },
+        {
+          "at": 31663,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep03#27"
+        },
+        {
+          "at": 32799,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep04#28"
+        },
+        {
+          "at": 33700,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep05#29"
+        },
+        {
+          "at": 34863,
+          "from": null,
+          "to": "1080x1920",
+          "episodeId": "ep01#30"
+        }
+      ],
+      "switchCount": 30,
+      "timeMsByRendition": {
+        "720x1280": 703,
+        "1080x1920": 15092
+      },
+      "dominant": "1080x1920",
+      "available": [
+        {
+          "label": "360x640",
+          "width": 360,
+          "height": 640,
+          "peakBitrate": 431648,
+          "averageBitrate": 392093
+        },
+        {
+          "label": "480x854",
+          "width": 480,
+          "height": 854,
+          "peakBitrate": 769296,
+          "averageBitrate": 691489
+        },
+        {
+          "label": "720x1280",
+          "width": 720,
+          "height": 1280,
+          "peakBitrate": 1325776,
+          "averageBitrate": 1259049
+        },
+        {
+          "label": "1080x1920",
+          "width": 1080,
+          "height": 1920,
+          "peakBitrate": 2721488,
+          "averageBitrate": 2601469
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "type": "player-created",
+      "at": 97,
+      "episodeId": "-",
+      "playerKey": "solo"
+    },
+    {
+      "type": "source-set",
+      "at": 98,
+      "episodeId": "ep01#0",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 407,
+      "episodeId": "ep01#0",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "video-track-change",
+      "at": 1230,
+      "episodeId": "ep01#0",
+      "playerKey": "solo",
+      "detail": "720x1280 @1259k"
+    },
+    {
+      "type": "transition-start",
+      "at": 1242,
+      "episodeId": "ep02#1",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 1242,
+      "episodeId": "ep02#1",
+      "playerKey": "solo"
+    },
+    {
+      "type": "video-track-change",
+      "at": 1730,
+      "episodeId": "ep02#1",
+      "playerKey": "solo",
+      "detail": "720x1280 @1263k"
+    },
+    {
+      "type": "first-frame",
+      "at": 1785,
+      "episodeId": "ep02#1",
+      "playerKey": "solo",
+      "durationMs": 543
+    },
+    {
+      "type": "transition-complete",
+      "at": 1785,
+      "episodeId": "ep02#1",
+      "playerKey": "solo",
+      "durationMs": 543
+    },
+    {
+      "type": "status-change",
+      "at": 1867,
+      "episodeId": "ep02#1",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 1880,
+      "episodeId": "ep02#1",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 2359,
+      "episodeId": "ep03#2",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 2359,
+      "episodeId": "ep03#2",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 2399,
+      "episodeId": "ep03#2",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 2399,
+      "episodeId": "ep03#2",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 3002,
+      "episodeId": "ep03#2",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2606k"
+    },
+    {
+      "type": "first-frame",
+      "at": 3080,
+      "episodeId": "ep03#2",
+      "playerKey": "solo",
+      "durationMs": 721
+    },
+    {
+      "type": "transition-complete",
+      "at": 3080,
+      "episodeId": "ep03#2",
+      "playerKey": "solo",
+      "durationMs": 721
+    },
+    {
+      "type": "status-change",
+      "at": 3298,
+      "episodeId": "ep03#2",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 3301,
+      "episodeId": "ep03#2",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 3492,
+      "episodeId": "ep04#3",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 3492,
+      "episodeId": "ep04#3",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 3537,
+      "episodeId": "ep04#3",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 3537,
+      "episodeId": "ep04#3",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 4086,
+      "episodeId": "ep04#3",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2594k"
+    },
+    {
+      "type": "first-frame",
+      "at": 4159,
+      "episodeId": "ep04#3",
+      "playerKey": "solo",
+      "durationMs": 667
+    },
+    {
+      "type": "transition-complete",
+      "at": 4159,
+      "episodeId": "ep04#3",
+      "playerKey": "solo",
+      "durationMs": 667
+    },
+    {
+      "type": "status-change",
+      "at": 4437,
+      "episodeId": "ep04#3",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 4444,
+      "episodeId": "ep04#3",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 4627,
+      "episodeId": "ep05#4",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 4627,
+      "episodeId": "ep05#4",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 4670,
+      "episodeId": "ep05#4",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 4670,
+      "episodeId": "ep05#4",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 5243,
+      "episodeId": "ep05#4",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2600k"
+    },
+    {
+      "type": "first-frame",
+      "at": 5303,
+      "episodeId": "ep05#4",
+      "playerKey": "solo",
+      "durationMs": 676
+    },
+    {
+      "type": "transition-complete",
+      "at": 5303,
+      "episodeId": "ep05#4",
+      "playerKey": "solo",
+      "durationMs": 676
+    },
+    {
+      "type": "status-change",
+      "at": 5585,
+      "episodeId": "ep05#4",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 5591,
+      "episodeId": "ep05#4",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 5773,
+      "episodeId": "ep01#5",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 5773,
+      "episodeId": "ep01#5",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 5808,
+      "episodeId": "ep01#5",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 5808,
+      "episodeId": "ep01#5",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 6424,
+      "episodeId": "ep01#5",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2601k"
+    },
+    {
+      "type": "first-frame",
+      "at": 6499,
+      "episodeId": "ep01#5",
+      "playerKey": "solo",
+      "durationMs": 726
+    },
+    {
+      "type": "transition-complete",
+      "at": 6500,
+      "episodeId": "ep01#5",
+      "playerKey": "solo",
+      "durationMs": 726
+    },
+    {
+      "type": "status-change",
+      "at": 6761,
+      "episodeId": "ep01#5",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 6761,
+      "episodeId": "ep01#5",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 6895,
+      "episodeId": "ep02#6",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 6895,
+      "episodeId": "ep02#6",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 6945,
+      "episodeId": "ep02#6",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 6945,
+      "episodeId": "ep02#6",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 7497,
+      "episodeId": "ep02#6",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2596k"
+    },
+    {
+      "type": "first-frame",
+      "at": 7596,
+      "episodeId": "ep02#6",
+      "playerKey": "solo",
+      "durationMs": 701
+    },
+    {
+      "type": "transition-complete",
+      "at": 7596,
+      "episodeId": "ep02#6",
+      "playerKey": "solo",
+      "durationMs": 701
+    },
+    {
+      "type": "status-change",
+      "at": 7838,
+      "episodeId": "ep02#6",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 7843,
+      "episodeId": "ep02#6",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 8039,
+      "episodeId": "ep03#7",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 8039,
+      "episodeId": "ep03#7",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 8077,
+      "episodeId": "ep03#7",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 8077,
+      "episodeId": "ep03#7",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 8639,
+      "episodeId": "ep03#7",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2606k"
+    },
+    {
+      "type": "first-frame",
+      "at": 8719,
+      "episodeId": "ep03#7",
+      "playerKey": "solo",
+      "durationMs": 680
+    },
+    {
+      "type": "transition-complete",
+      "at": 8719,
+      "episodeId": "ep03#7",
+      "playerKey": "solo",
+      "durationMs": 680
+    },
+    {
+      "type": "status-change",
+      "at": 8929,
+      "episodeId": "ep03#7",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 8932,
+      "episodeId": "ep03#7",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 9172,
+      "episodeId": "ep04#8",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 9172,
+      "episodeId": "ep04#8",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 9225,
+      "episodeId": "ep04#8",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 9225,
+      "episodeId": "ep04#8",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 9767,
+      "episodeId": "ep04#8",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2594k"
+    },
+    {
+      "type": "first-frame",
+      "at": 9817,
+      "episodeId": "ep04#8",
+      "playerKey": "solo",
+      "durationMs": 645
+    },
+    {
+      "type": "transition-complete",
+      "at": 9817,
+      "episodeId": "ep04#8",
+      "playerKey": "solo",
+      "durationMs": 645
+    },
+    {
+      "type": "status-change",
+      "at": 10091,
+      "episodeId": "ep04#8",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 10096,
+      "episodeId": "ep04#8",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 10319,
+      "episodeId": "ep05#9",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 10319,
+      "episodeId": "ep05#9",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 10367,
+      "episodeId": "ep05#9",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 10367,
+      "episodeId": "ep05#9",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 10947,
+      "episodeId": "ep05#9",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2600k"
+    },
+    {
+      "type": "first-frame",
+      "at": 11006,
+      "episodeId": "ep05#9",
+      "playerKey": "solo",
+      "durationMs": 687
+    },
+    {
+      "type": "transition-complete",
+      "at": 11006,
+      "episodeId": "ep05#9",
+      "playerKey": "solo",
+      "durationMs": 687
+    },
+    {
+      "type": "status-change",
+      "at": 11273,
+      "episodeId": "ep05#9",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 11277,
+      "episodeId": "ep05#9",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 11467,
+      "episodeId": "ep01#10",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 11467,
+      "episodeId": "ep01#10",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 11505,
+      "episodeId": "ep01#10",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 11506,
+      "episodeId": "ep01#10",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 12265,
+      "episodeId": "ep01#10",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2601k"
+    },
+    {
+      "type": "first-frame",
+      "at": 12319,
+      "episodeId": "ep01#10",
+      "playerKey": "solo",
+      "durationMs": 852
+    },
+    {
+      "type": "transition-complete",
+      "at": 12319,
+      "episodeId": "ep01#10",
+      "playerKey": "solo",
+      "durationMs": 852
+    },
+    {
+      "type": "status-change",
+      "at": 12454,
+      "episodeId": "ep01#10",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 12454,
+      "episodeId": "ep01#10",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 12599,
+      "episodeId": "ep02#11",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 12599,
+      "episodeId": "ep02#11",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 12647,
+      "episodeId": "ep02#11",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 12647,
+      "episodeId": "ep02#11",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 13191,
+      "episodeId": "ep02#11",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2596k"
+    },
+    {
+      "type": "first-frame",
+      "at": 13275,
+      "episodeId": "ep02#11",
+      "playerKey": "solo",
+      "durationMs": 676
+    },
+    {
+      "type": "transition-complete",
+      "at": 13275,
+      "episodeId": "ep02#11",
+      "playerKey": "solo",
+      "durationMs": 676
+    },
+    {
+      "type": "status-change",
+      "at": 13515,
+      "episodeId": "ep02#11",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 13519,
+      "episodeId": "ep02#11",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 13745,
+      "episodeId": "ep03#12",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 13745,
+      "episodeId": "ep03#12",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 13790,
+      "episodeId": "ep03#12",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 13790,
+      "episodeId": "ep03#12",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 14399,
+      "episodeId": "ep03#12",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2606k"
+    },
+    {
+      "type": "first-frame",
+      "at": 14452,
+      "episodeId": "ep03#12",
+      "playerKey": "solo",
+      "durationMs": 707
+    },
+    {
+      "type": "transition-complete",
+      "at": 14452,
+      "episodeId": "ep03#12",
+      "playerKey": "solo",
+      "durationMs": 707
+    },
+    {
+      "type": "status-change",
+      "at": 14700,
+      "episodeId": "ep03#12",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 14731,
+      "episodeId": "ep03#12",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 14886,
+      "episodeId": "ep04#13",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 14886,
+      "episodeId": "ep04#13",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 14940,
+      "episodeId": "ep04#13",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 14940,
+      "episodeId": "ep04#13",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 15502,
+      "episodeId": "ep04#13",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2594k"
+    },
+    {
+      "type": "first-frame",
+      "at": 15576,
+      "episodeId": "ep04#13",
+      "playerKey": "solo",
+      "durationMs": 690
+    },
+    {
+      "type": "transition-complete",
+      "at": 15576,
+      "episodeId": "ep04#13",
+      "playerKey": "solo",
+      "durationMs": 691
+    },
+    {
+      "type": "status-change",
+      "at": 15828,
+      "episodeId": "ep04#13",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 15832,
+      "episodeId": "ep04#13",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 16040,
+      "episodeId": "ep05#14",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 16040,
+      "episodeId": "ep05#14",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 16082,
+      "episodeId": "ep05#14",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 16082,
+      "episodeId": "ep05#14",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 16648,
+      "episodeId": "ep05#14",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2600k"
+    },
+    {
+      "type": "first-frame",
+      "at": 16721,
+      "episodeId": "ep05#14",
+      "playerKey": "solo",
+      "durationMs": 681
+    },
+    {
+      "type": "transition-complete",
+      "at": 16721,
+      "episodeId": "ep05#14",
+      "playerKey": "solo",
+      "durationMs": 681
+    },
+    {
+      "type": "status-change",
+      "at": 17027,
+      "episodeId": "ep05#14",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 17027,
+      "episodeId": "ep05#14",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 17176,
+      "episodeId": "ep01#15",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 17176,
+      "episodeId": "ep01#15",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 17228,
+      "episodeId": "ep01#15",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 17228,
+      "episodeId": "ep01#15",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 18129,
+      "episodeId": "ep01#15",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2601k"
+    },
+    {
+      "type": "first-frame",
+      "at": 18182,
+      "episodeId": "ep01#15",
+      "playerKey": "solo",
+      "durationMs": 1006
+    },
+    {
+      "type": "transition-complete",
+      "at": 18182,
+      "episodeId": "ep01#15",
+      "playerKey": "solo",
+      "durationMs": 1006
+    },
+    {
+      "type": "transition-start",
+      "at": 18322,
+      "episodeId": "ep02#16",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 18322,
+      "episodeId": "ep02#16",
+      "playerKey": "solo"
+    },
+    {
+      "type": "video-track-change",
+      "at": 19080,
+      "episodeId": "ep02#16",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2596k"
+    },
+    {
+      "type": "first-frame",
+      "at": 19132,
+      "episodeId": "ep02#16",
+      "playerKey": "solo",
+      "durationMs": 810
+    },
+    {
+      "type": "transition-complete",
+      "at": 19132,
+      "episodeId": "ep02#16",
+      "playerKey": "solo",
+      "durationMs": 810
+    },
+    {
+      "type": "status-change",
+      "at": 19407,
+      "episodeId": "ep02#16",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 19407,
+      "episodeId": "ep02#16",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 19457,
+      "episodeId": "ep03#17",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 19457,
+      "episodeId": "ep03#17",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 19508,
+      "episodeId": "ep03#17",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 19508,
+      "episodeId": "ep03#17",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 20034,
+      "episodeId": "ep03#17",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2606k"
+    },
+    {
+      "type": "first-frame",
+      "at": 20114,
+      "episodeId": "ep03#17",
+      "playerKey": "solo",
+      "durationMs": 657
+    },
+    {
+      "type": "transition-complete",
+      "at": 20114,
+      "episodeId": "ep03#17",
+      "playerKey": "solo",
+      "durationMs": 657
+    },
+    {
+      "type": "status-change",
+      "at": 20336,
+      "episodeId": "ep03#17",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 20340,
+      "episodeId": "ep03#17",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 20601,
+      "episodeId": "ep04#18",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 20601,
+      "episodeId": "ep04#18",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 20650,
+      "episodeId": "ep04#18",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 20650,
+      "episodeId": "ep04#18",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 21149,
+      "episodeId": "ep04#18",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2594k"
+    },
+    {
+      "type": "first-frame",
+      "at": 21211,
+      "episodeId": "ep04#18",
+      "playerKey": "solo",
+      "durationMs": 610
+    },
+    {
+      "type": "transition-complete",
+      "at": 21211,
+      "episodeId": "ep04#18",
+      "playerKey": "solo",
+      "durationMs": 610
+    },
+    {
+      "type": "status-change",
+      "at": 21483,
+      "episodeId": "ep04#18",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 21483,
+      "episodeId": "ep04#18",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 21746,
+      "episodeId": "ep05#19",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 21746,
+      "episodeId": "ep05#19",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 21784,
+      "episodeId": "ep05#19",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 21784,
+      "episodeId": "ep05#19",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 22325,
+      "episodeId": "ep05#19",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2600k"
+    },
+    {
+      "type": "first-frame",
+      "at": 22403,
+      "episodeId": "ep05#19",
+      "playerKey": "solo",
+      "durationMs": 657
+    },
+    {
+      "type": "transition-complete",
+      "at": 22403,
+      "episodeId": "ep05#19",
+      "playerKey": "solo",
+      "durationMs": 657
+    },
+    {
+      "type": "status-change",
+      "at": 22649,
+      "episodeId": "ep05#19",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 22652,
+      "episodeId": "ep05#19",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 22881,
+      "episodeId": "ep01#20",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 22881,
+      "episodeId": "ep01#20",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 22925,
+      "episodeId": "ep01#20",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 22925,
+      "episodeId": "ep01#20",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 23496,
+      "episodeId": "ep01#20",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2601k"
+    },
+    {
+      "type": "first-frame",
+      "at": 23556,
+      "episodeId": "ep01#20",
+      "playerKey": "solo",
+      "durationMs": 675
+    },
+    {
+      "type": "transition-complete",
+      "at": 23556,
+      "episodeId": "ep01#20",
+      "playerKey": "solo",
+      "durationMs": 675
+    },
+    {
+      "type": "status-change",
+      "at": 23813,
+      "episodeId": "ep01#20",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 23816,
+      "episodeId": "ep01#20",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 24015,
+      "episodeId": "ep02#21",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 24015,
+      "episodeId": "ep02#21",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 24054,
+      "episodeId": "ep02#21",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 24054,
+      "episodeId": "ep02#21",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 24607,
+      "episodeId": "ep02#21",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2596k"
+    },
+    {
+      "type": "first-frame",
+      "at": 24671,
+      "episodeId": "ep02#21",
+      "playerKey": "solo",
+      "durationMs": 656
+    },
+    {
+      "type": "transition-complete",
+      "at": 24671,
+      "episodeId": "ep02#21",
+      "playerKey": "solo",
+      "durationMs": 656
+    },
+    {
+      "type": "status-change",
+      "at": 24950,
+      "episodeId": "ep02#21",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 24953,
+      "episodeId": "ep02#21",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 25149,
+      "episodeId": "ep03#22",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 25149,
+      "episodeId": "ep03#22",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 25192,
+      "episodeId": "ep03#22",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 25192,
+      "episodeId": "ep03#22",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 25785,
+      "episodeId": "ep03#22",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2606k"
+    },
+    {
+      "type": "first-frame",
+      "at": 25836,
+      "episodeId": "ep03#22",
+      "playerKey": "solo",
+      "durationMs": 687
+    },
+    {
+      "type": "transition-complete",
+      "at": 25836,
+      "episodeId": "ep03#22",
+      "playerKey": "solo",
+      "durationMs": 687
+    },
+    {
+      "type": "status-change",
+      "at": 26082,
+      "episodeId": "ep03#22",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 26085,
+      "episodeId": "ep03#22",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 26295,
+      "episodeId": "ep04#23",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 26295,
+      "episodeId": "ep04#23",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 26339,
+      "episodeId": "ep04#23",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 26339,
+      "episodeId": "ep04#23",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 26906,
+      "episodeId": "ep04#23",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2594k"
+    },
+    {
+      "type": "first-frame",
+      "at": 26970,
+      "episodeId": "ep04#23",
+      "playerKey": "solo",
+      "durationMs": 675
+    },
+    {
+      "type": "transition-complete",
+      "at": 26970,
+      "episodeId": "ep04#23",
+      "playerKey": "solo",
+      "durationMs": 675
+    },
+    {
+      "type": "status-change",
+      "at": 27248,
+      "episodeId": "ep04#23",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 27251,
+      "episodeId": "ep04#23",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 27437,
+      "episodeId": "ep05#24",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 27437,
+      "episodeId": "ep05#24",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 27490,
+      "episodeId": "ep05#24",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 27490,
+      "episodeId": "ep05#24",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 28039,
+      "episodeId": "ep05#24",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2600k"
+    },
+    {
+      "type": "first-frame",
+      "at": 28092,
+      "episodeId": "ep05#24",
+      "playerKey": "solo",
+      "durationMs": 655
+    },
+    {
+      "type": "transition-complete",
+      "at": 28092,
+      "episodeId": "ep05#24",
+      "playerKey": "solo",
+      "durationMs": 655
+    },
+    {
+      "type": "status-change",
+      "at": 28372,
+      "episodeId": "ep05#24",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 28375,
+      "episodeId": "ep05#24",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 28591,
+      "episodeId": "ep01#25",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 28591,
+      "episodeId": "ep01#25",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 28626,
+      "episodeId": "ep01#25",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 28626,
+      "episodeId": "ep01#25",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 29207,
+      "episodeId": "ep01#25",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2601k"
+    },
+    {
+      "type": "first-frame",
+      "at": 29271,
+      "episodeId": "ep01#25",
+      "playerKey": "solo",
+      "durationMs": 680
+    },
+    {
+      "type": "transition-complete",
+      "at": 29271,
+      "episodeId": "ep01#25",
+      "playerKey": "solo",
+      "durationMs": 680
+    },
+    {
+      "type": "status-change",
+      "at": 29539,
+      "episodeId": "ep01#25",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 29542,
+      "episodeId": "ep01#25",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 29724,
+      "episodeId": "ep02#26",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 29724,
+      "episodeId": "ep02#26",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 29763,
+      "episodeId": "ep02#26",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 29763,
+      "episodeId": "ep02#26",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 30428,
+      "episodeId": "ep02#26",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2596k"
+    },
+    {
+      "type": "first-frame",
+      "at": 30484,
+      "episodeId": "ep02#26",
+      "playerKey": "solo",
+      "durationMs": 760
+    },
+    {
+      "type": "transition-complete",
+      "at": 30484,
+      "episodeId": "ep02#26",
+      "playerKey": "solo",
+      "durationMs": 760
+    },
+    {
+      "type": "status-change",
+      "at": 30748,
+      "episodeId": "ep02#26",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 30750,
+      "episodeId": "ep02#26",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 30861,
+      "episodeId": "ep03#27",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 30861,
+      "episodeId": "ep03#27",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 30910,
+      "episodeId": "ep03#27",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 30910,
+      "episodeId": "ep03#27",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 31664,
+      "episodeId": "ep03#27",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2606k"
+    },
+    {
+      "type": "first-frame",
+      "at": 31758,
+      "episodeId": "ep03#27",
+      "playerKey": "solo",
+      "durationMs": 897
+    },
+    {
+      "type": "transition-complete",
+      "at": 31758,
+      "episodeId": "ep03#27",
+      "playerKey": "solo",
+      "durationMs": 897
+    },
+    {
+      "type": "status-change",
+      "at": 31983,
+      "episodeId": "ep03#27",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 31986,
+      "episodeId": "ep03#27",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 31995,
+      "episodeId": "ep04#28",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 31995,
+      "episodeId": "ep04#28",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 32030,
+      "episodeId": "ep04#28",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 32030,
+      "episodeId": "ep04#28",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 32799,
+      "episodeId": "ep04#28",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2594k"
+    },
+    {
+      "type": "first-frame",
+      "at": 32864,
+      "episodeId": "ep04#28",
+      "playerKey": "solo",
+      "durationMs": 869
+    },
+    {
+      "type": "transition-complete",
+      "at": 32864,
+      "episodeId": "ep04#28",
+      "playerKey": "solo",
+      "durationMs": 869
+    },
+    {
+      "type": "transition-start",
+      "at": 33136,
+      "episodeId": "ep05#29",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 33136,
+      "episodeId": "ep05#29",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 33142,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 33142,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "status-change",
+      "at": 33208,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 33208,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 33700,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2600k"
+    },
+    {
+      "type": "first-frame",
+      "at": 33763,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "durationMs": 627
+    },
+    {
+      "type": "transition-complete",
+      "at": 33763,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "durationMs": 627
+    },
+    {
+      "type": "status-change",
+      "at": 34048,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 34055,
+      "episodeId": "ep05#29",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "transition-start",
+      "at": 34298,
+      "episodeId": "ep01#30",
+      "playerKey": "-"
+    },
+    {
+      "type": "source-set",
+      "at": 34298,
+      "episodeId": "ep01#30",
+      "playerKey": "solo"
+    },
+    {
+      "type": "status-change",
+      "at": 34347,
+      "episodeId": "ep01#30",
+      "playerKey": "solo",
+      "detail": "loading"
+    },
+    {
+      "type": "playing-change",
+      "at": 34347,
+      "episodeId": "ep01#30",
+      "playerKey": "solo",
+      "detail": "paused"
+    },
+    {
+      "type": "video-track-change",
+      "at": 34863,
+      "episodeId": "ep01#30",
+      "playerKey": "solo",
+      "detail": "1080x1920 @2601k"
+    },
+    {
+      "type": "first-frame",
+      "at": 34957,
+      "episodeId": "ep01#30",
+      "playerKey": "solo",
+      "durationMs": 659
+    },
+    {
+      "type": "transition-complete",
+      "at": 34957,
+      "episodeId": "ep01#30",
+      "playerKey": "solo",
+      "durationMs": 659
+    },
+    {
+      "type": "status-change",
+      "at": 35177,
+      "episodeId": "ep01#30",
+      "playerKey": "solo",
+      "detail": "readyToPlay"
+    },
+    {
+      "type": "playing-change",
+      "at": 35179,
+      "episodeId": "ep01#30",
+      "playerKey": "solo",
+      "detail": "playing"
+    },
+    {
+      "type": "player-released",
+      "at": 35278,
+      "episodeId": "-",
+      "playerKey": "solo"
+    }
+  ]
+}

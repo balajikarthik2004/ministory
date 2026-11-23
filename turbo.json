@@ -4,21 +4,52 @@
   "globalDependencies": [".env.example", "tsconfig.base.json"],
   "globalEnv": ["NODE_ENV"],
   "tasks": {
+    "db:generate": {
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["src/generated/**"],
+
+      /* TURBO 2 RUNS TASKS IN A FILTERED ENVIRONMENT ("strict" is the default
+         env mode). A task subprocess sees only the variables declared in
+         globalEnv, globalPassThroughEnv, or the task's own env/passThroughEnv
+         — everything else is stripped, even when it is set in the parent
+         shell.
+
+         Without this, `prisma generate` could not see DATABASE_URL and
+         prisma.config.ts refused to load. It never failed locally because
+         prisma.config.ts falls back to reading apps/backend/.env, which every
+         developer has and which is gitignored, so CI is the first environment
+         where the variable genuinely has to arrive through the environment.
+
+         passThroughEnv, not env: the generated client is a function of
+         schema.prisma alone. Hashing the connection string would mean a
+         developer on port 55432 and CI on 5432 never share a cache entry for
+         a task whose output is identical either way. */
+      "passThroughEnv": ["DATABASE_URL"]
+    },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "db:generate"],
       "outputs": ["dist/**", "build/**", ".expo/**"]
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "db:generate"],
       "outputs": []
     },
     "lint": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "db:generate"],
       "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": [],
+
+      /* The backend suite reads both: DATABASE_URL is what
+         tests/support/test-database.ts derives `minidrama_test` from, and
+         AUTH_JWT_SECRET is required with no default by src/config/env.ts.
+         Neither reaches the task without being named here (see db:generate).
+
+         The mobile suite needs neither and is unaffected — a variable listed
+         here is passed through where it exists, not required. */
+      "passThroughEnv": ["DATABASE_URL", "AUTH_JWT_SECRET"]
     },
     "clean": {
       "cache": false
