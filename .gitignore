@@ -79,3 +79,33 @@ desktop.ini
 .cache/
 tmp/
 temp/
+
+# Generated HLS test fixtures - large binary (58 MB single-variant, 146 MB ABR),
+# regenerate with:
+#   node tools/video-fixtures/generate.mjs        (M1.2 single-variant)
+#   node tools/video-fixtures/generate-abr.mjs    (M1.3 four-rendition ladder)
+tools/video-fixtures/out/
+tools/video-fixtures/out-abr/
+
+# adb profiling scratch captures written to the repo root by the scripts'
+# default output names. Benchmark results committed under
+# tools/android-profiling/results/ are deliberately NOT ignored - they are
+# the evidence behind docs/VIDEO_PLAYER_SPIKE.md.
+/*.csv
+/crashes-*.log
+/memory-*.csv
+
+# Development mail outbox (M2.5).
+# FileMailProvider writes every password-reset and email-verification message
+# here instead of sending it. Each file contains a single-use token that is a
+# live credential for the account it names, so this directory must never be
+# committed.
+.mail-outbox/
+
+# ──────────────────── Device-run evidence screenshots ────────────────────
+# 19 MB of PNGs from the M2.1/M2.2/M2.5 on-device verification runs. They are
+# real evidence and are kept on disk, but a public repository is the wrong
+# place for them: they are large, binary, permanent once pushed, and show a
+# developer's device. The written record travels instead — CHECKLIST.md here,
+# and the milestone findings in docs/.
+docs/evidence/**/*.png

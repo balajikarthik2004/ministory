@@ -1,0 +1,761 @@
+// MiniDrama — Prisma schema
+//
+// Source of truth: docs/DATABASE_SCHEMA.md. Field names, types, constraints and
+// indexes below follow that document. Where this file departs from it, the
+// departure is marked `DEVIATION:` with its reason — silent drift between the
+// schema document and the schema is how the two stop being worth reading.
+//
+// SCOPE — Milestone 1.3 covers the MVP catalogue, identity core and engagement
+// models. DATABASE_SCHEMA.md also specifies models for admin identity, auth
+// sessions, monetisation, notifications, moderation and analytics. Those are
+// deliberately NOT in migration 1; they arrive with the milestone that uses
+// them. Prisma Migrate is forward-only and additive (DATABASE_SCHEMA.md §8), so
+// adding a table later is an ordinary migration, not a rewrite.
+//
+// Deferred to a later migration, with the milestone that needs it:
+//   AdminUser, AdminAuditLog                      M5  admin dashboard
+//   Device                                        M6  notifications
+//   Session, VerificationToken                    M2.5 — ARRIVED, see below
+//   CastMember, DramaCast                         M5  admin content management
+//   SubscriptionPlan, Subscription, Payment       M7  monetisation
+//   CoinWallet, CoinTransaction, EpisodeUnlock    M7  monetisation
+//   Advertisement                                 M7  monetisation
+//   Notification                                  M6  engagement
+//   ContentReport                                 M6  moderation
+//   PlaybackEvent, EpisodeDailyStat, SearchQuery  M6+ analytics
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+
+  // The backend is NodeNext ESM (apps/backend/tsconfig.json), so generated
+  // relative imports must carry a file extension or `node dist/server.js`
+  // cannot resolve them.
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+  runtime             = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+  // No `url` here: Prisma 7 removed it from the schema. The migration CLI
+  // reads the connection string from prisma.config.ts, and the application
+  // passes it to the driver adapter in src/services/prisma.ts. One credential,
+  // two consumers, neither of them this file.
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+// Enums for fixed, code-coupled value sets; real tables for operator-editable
+// data (DATABASE_SCHEMA.md §1 rule 7).
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum PublishStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ProcessingStatus {
+  PENDING
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum AccessType {
+  FREE
+  PREMIUM
+}
+
+/// IT Rules 2021 aligned — PRD PD-5. Mandatory for an Indian OTT publisher.
+enum ContentRating {
+  U
+  UA_7
+  UA_13
+  UA_16
+  A
+}
+
+enum ReleaseStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+/// What a single-use emailed token authorises. One table, one enum, rather
+/// than two near-identical tables: the issue/consume/expire logic is the same
+/// for both, and a shared table means one place where "single use" is enforced.
+enum VerificationPurpose {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  /// Web-initiated account deletion (M2.6 §8.2). The value ships with M2.6's
+  /// migration although nothing issues one yet: the flow it belongs to needs a
+  /// real mail sender (ADR-42), and adding an enum value later is a migration
+  /// where adding the code is not.
+  ACCOUNT_DELETION
+}
+
+/// Where a deletion request came from. Reporting only — no authorisation
+/// decision reads this.
+enum AccountDeletionSource {
+  IN_APP
+  WEB
+  ADMIN
+}
+
+/// Lifecycle of the post-commit `PlaybackEvent` de-linking sweep.
+///
+/// EXISTS SO AN INTERRUPTED SWEEP IS VISIBLE RATHER THAN SILENT. The account
+/// is already gone when the sweep starts, so a crash mid-loop costs nothing in
+/// access terms — but it leaves rows carrying a deleted user's id, and
+/// something has to be able to find them. `IN_PROGRESS` that never advanced is
+/// exactly that signal.
+enum PlaybackCleanupStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+/// Why a session stopped being usable. Recorded rather than inferred, because
+/// `REFRESH_REUSE` is a security event and must be distinguishable from an
+/// ordinary logout when reading the table after the fact.
+enum SessionRevocationReason {
+  LOGOUT
+  LOGOUT_ALL
+  ROTATED
+  REFRESH_REUSE
+  PASSWORD_CHANGED
+  PASSWORD_RESET
+  ACCOUNT_DELETED
+  MERGED
+}
+
+// ──────────────────────────── Identity ───────────────────────────────
+
+model User {
+  id          String     @id @default(cuid())
+  /// Set when Firebase identity is swapped in behind the AuthProvider
+  /// interface (ADR-06). Null for every user created by the local JWT
+  /// provider used in development.
+  firebaseUid String?    @unique
+  email       String?    @unique
+  phone       String?    @unique
+  /// Guest browsing is P0 (PRD AUTH-03). A guest is a real row so that watch
+  /// history survives the upgrade to a registered account (AUTH-06).
+  isAnonymous Boolean    @default(false)
+  status      UserStatus @default(ACTIVE)
+  lastSeenAt  DateTime?
+  /// Account deletion anonymises rather than drops this row, so that financial
+  /// records keep a valid reference (DATABASE_SCHEMA.md §6).
+  deletedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // ───────────────────── Credentials (M2.5) ─────────────────────
+
+  /// Argon2id PHC string, or null.
+  ///
+  /// NULLABLE ON PURPOSE, and it is not an oversight to guard against: a guest
+  /// account (`isAnonymous`) has no password, and a future Google or phone
+  /// account will not have one either. Every read path therefore has to treat
+  /// "no password set" as a real state rather than an impossible one — see
+  /// `auth.service.ts`, which runs a dummy verification in that case so the
+  /// response time does not reveal which accounts can be logged into.
+  passwordHash String?
+
+  /// When this address was proven to belong to whoever controls the account.
+  ///
+  /// Null means unverified. Unverified accounts can still sign in and watch:
+  /// blocking playback on a mailbox round-trip would fail the viewer for our
+  /// benefit. What verification gates is anything that trusts the address,
+  /// which today is password reset.
+  emailVerifiedAt DateTime?
+
+  /// Invalidates every access token issued before this instant.
+  ///
+  /// Access tokens are stateless and live 15 minutes, so revoking a session
+  /// row alone leaves a window where a stolen access token still works. On a
+  /// password change or a forced sign-out this moves forward, and token
+  /// verification refuses anything issued earlier. It is the one piece of
+  /// per-user state the access-token path reads, and it is a single indexed
+  /// primary-key lookup the request already makes.
+  tokensValidFrom DateTime?
+
+  profile       UserProfile?
+  watchHistory  WatchHistory[]
+  dramaProgress DramaProgress[]
+  favorites     Favorite[]
+  sessions      Session[]
+  verifications VerificationToken[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Refresh-token store. Rotation, reuse detection and instant revocation
+/// (ARCH §6, DATABASE_SCHEMA.md §3).
+///
+/// DEVIATION from DATABASE_SCHEMA.md §3, which specifies `refreshHash` as an
+/// argon2 hash. It is a SHA-256 hash here, and the difference matters:
+///
+///   * Argon2 is salted, so the same token hashes differently every time.
+///     A salted column cannot be looked up by hashing the presented token —
+///     the server would have to scan every session row and argon2-verify each
+///     one, at roughly 50ms per attempt. That is not a refresh path.
+///   * Argon2's cost exists to defeat brute force against LOW-ENTROPY secrets.
+///     A refresh token here is 32 bytes from `crypto.randomBytes`. There is no
+///     search space to grind; a preimage attack on SHA-256 of a 256-bit random
+///     value is not a threat model, it is a wish.
+///   * The property we actually need is that a stolen database dump yields no
+///     usable tokens, and a one-way hash of any kind gives that.
+///
+/// Crucially, a deterministic hash is what makes REUSE DETECTION possible at
+/// all: an attacker replaying an already-rotated token must be findable in
+/// this table, revoked row and all. With a salted hash the row is unfindable
+/// and the replay looks exactly like an unknown token. See ADR-37.
+model Session {
+  id String @id @default(cuid())
+
+  userId String
+
+  /// Groups one rotation chain — the original login and every token that
+  /// descended from it. Reuse of any token in the chain revokes the whole
+  /// family, because a replay means the chain is compromised and there is no
+  /// way to tell which holder is the legitimate one.
+  familyId String
+
+  /// SHA-256 of the raw refresh token, hex. Never the token itself.
+  refreshHash String @unique
+
+  /// The session this one replaced, for walking a chain when investigating.
+  parentId String? @unique
+
+  /// Opaque, client-generated, stable per install. Binds a guest session to a
+  /// device so that an anonymous account survives an app restart without a
+  /// credential the user has to remember (PRD AUTH-03).
+  deviceId String?
+
+  platform  String?
+  userAgent String?
+  /// Hashed, never raw — data minimisation under the DPDP Act.
+  ipHash    String?
+
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  revokedReason SessionRevocationReason?
+  lastUsedAt    DateTime                 @default(now())
+  createdAt     DateTime                 @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@index([userId, deviceId])
+}
+
+/// Single-use, emailed tokens: password reset and email verification.
+///
+/// Stores a SHA-256 hash for the same reason `Session.refreshHash` does — the
+/// token is high-entropy and must be findable by hashing what was presented.
+/// The raw value exists only in the email.
+model VerificationToken {
+  id String @id @default(cuid())
+
+  userId  String
+  purpose VerificationPurpose
+
+  /// SHA-256 of the raw token, hex.
+  tokenHash String @unique
+
+  /// The address this token was issued against.
+  ///
+  /// Checked on consumption: a verification link emailed to an old address
+  /// must not verify a new one, and a reset link must not survive the owner
+  /// changing their email to recover from a takeover.
+  email String
+
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
+}
+
+/// The record that an account deletion happened (M2.6, D3).
+///
+/// DATABASE_SCHEMA.md §6 requires deletion to be logged, and `AdminAuditLog`
+/// does not arrive until M5. This is the consumer-side equivalent, and it is
+/// built to the opposite rule from an audit log: it records WHAT HAPPENED and
+/// nothing about WHO IT HAPPENED TO.
+///
+/// WHAT MUST NEVER APPEAR HERE: email, phone, firebaseUid, passwordHash,
+/// displayName, any raw or hashed session or verification token, deviceId,
+/// ipHash, userAgent, or any episode, drama or position the person watched.
+/// A deletion record that reconstitutes the deleted account is not a deletion.
+///
+/// `userId` is a random cuid on a row whose identifiers have already been
+/// nulled, so it is not a direct identifier — and it is required, because
+/// without it the reconciler has no subject and the audit has no referent.
+///
+/// NO FOREIGN KEY TO `User`, for the same reason `PlaybackEvent` has none:
+/// this row is the record that an account ceased to exist, and it must not be
+/// removable by a cascade from the very table it describes. The id is written
+/// inside the same transaction that anonymises the user, so it always refers
+/// to a real row without a constraint saying so.
+model AccountDeletion {
+  id String @id @default(cuid())
+
+  /// The retained, anonymised `User.id`. Unique: one deletion per account.
+  userId String @unique
+
+  source AccountDeletionSource @default(IN_APP)
+  /// Whether the account was a guest. Reporting only.
+  wasAnonymous Boolean
+
+  requestedAt DateTime @default(now())
+  /// Deletion is synchronous (D1), so this is set when the transaction commits
+  /// rather than left null for a job to fill in later.
+  completedAt DateTime
+
+  // ── Aggregate counts. How much, never what. ──
+  removedWatchHistory       Int @default(0)
+  removedDramaProgress      Int @default(0)
+  removedFavorites          Int @default(0)
+  removedSessions           Int @default(0)
+  removedVerificationTokens Int @default(0)
+
+  // ── Playback de-linking lifecycle (M2.6 §6) ──
+  playbackStatus     PlaybackCleanupStatus @default(PENDING)
+  playbackAnonymised Int                   @default(0)
+  playbackAttempts   Int                   @default(0)
+  playbackStartedAt  DateTime?
+  playbackFinishedAt DateTime?
+  /// A stable code, never a driver message: an error string can carry row
+  /// contents, and this table is the one place that must not hold any.
+  playbackErrorCode  String?
+
+  // ── Deletion receipt (M2.6 §7) ──
+  /// SHA-256 of a client-generated 256-bit id, hex. Never the id itself.
+  ///
+  /// This is what lets a client that lost the 200 response ask whether its
+  /// deletion went through, after the credential that would have asked has
+  /// been destroyed. Unique, so a replayed key cannot record a second
+  /// deletion.
+  receiptHash String? @unique
+  /// After this, `receiptHash` is nulled by `reconcile:deletions --prune`.
+  /// Recovery past thirty days is pointless and an unused secret should not
+  /// outlive its purpose.
+  receiptExpiresAt DateTime?
+
+  @@index([playbackStatus]) /// the reconciler's working set
+  @@index([requestedAt]) /// the two-year prune
+  @@index([receiptExpiresAt]) /// the receipt prune
+}
+
+model UserProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  displayName         String?
+  /// Object-storage key, never a URL. Which storage is behind it is the
+  /// storage provider's business (CLAUDE.md §19) — local filesystem in
+  /// development, R2 in production.
+  avatarKey           String?
+  preferredLanguageId String?
+  preferredGenres     String[] @default([])
+  autoplayNext        Boolean  @default(true)
+  notificationsOptIn  Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredLanguage Language? @relation(fields: [preferredLanguageId], references: [id])
+
+  @@index([preferredLanguageId])
+}
+
+// ─────────────────────────── Catalogue ───────────────────────────────
+
+model Language {
+  id         String   @id @default(cuid())
+  code       String   @unique /// ISO 639-1: "ta", "te", "hi"
+  name       String /// "Tamil"
+  nativeName String /// "தமிழ்"
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  dramas       Drama[]
+  subtitles    Subtitle[]
+  profiles     UserProfile[]
+  translations DramaTranslation[]
+
+  @@index([isActive, sortOrder])
+}
+
+/// The "Genre / Category" entity. One model, not two: a genre IS a category in
+/// this product, and two tables holding the same nine rows would be a
+/// distinction the UI never makes.
+model Category {
+  id        String   @id @default(cuid())
+  slug      String   @unique /// "romance", "thriller"
+  name      String
+  iconKey   String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  dramas DramaCategory[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Drama {
+  id          String @id @default(cuid())
+  slug        String @unique
+  title       String
+  description String
+
+  posterKey         String? /// storage key, not a URL
+  coverKey          String?
+  /// Provider-scoped playback identifier for the trailer. See the DEVIATION
+  /// note on Episode for why this is not named after a specific vendor.
+  trailerPlaybackId String?
+
+  /// A drama has exactly one primary language — the language it was produced
+  /// in. Localised metadata lives in DramaTranslation (PRD PD-4), and dubbed
+  /// or subtitled variants do not split a title's analytics.
+  languageId String
+
+  contentRating ContentRating @default(UA_13)
+  releaseStatus ReleaseStatus @default(ONGOING)
+  status        PublishStatus @default(DRAFT)
+  isFeatured    Boolean       @default(false)
+
+  /// PRD PD-2: the first N episodes of this drama are free, configurable per
+  /// drama. Episode.accessType is the authority for a single episode; this
+  /// drives the default when episodes are created.
+  freeEpisodeCount Int @default(3)
+
+  publishedAt DateTime?
+  /// Soft delete. Content is archived rather than dropped so that analytics
+  /// history keeps its referent (DATABASE_SCHEMA.md §1 rule 3).
+  archivedAt  DateTime?
+
+  // Denormalised counters, maintained in the same transaction as the write
+  // that changes them. They exist because the feed cannot afford a COUNT(*)
+  // per card.
+  totalEpisodes   Int   @default(0)
+  totalViews      BigInt @default(0)
+  favoriteCount   Int   @default(0)
+  popularityScore Float @default(0) /// nightly job; drives the Trending rail
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  language     Language           @relation(fields: [languageId], references: [id])
+  seasons      Season[]
+  categories   DramaCategory[]
+  translations DramaTranslation[]
+  favorites    Favorite[]
+  progress     DramaProgress[]
+
+  @@index([status, publishedAt]) /// every catalogue listing
+  @@index([languageId, status]) /// language-filtered browse (DISC-04)
+  @@index([popularityScore(sort: Desc)]) /// Trending rail
+  @@index([isFeatured, status]) /// Home banner
+}
+
+/// PRD PD-4. Localised title and synopsis without duplicating the drama row,
+/// which is what the entity list called "DramaLanguage". Modelled as the
+/// schema document specifies: one primary language on Drama, plus translations.
+model DramaTranslation {
+  id          String   @id @default(cuid())
+  dramaId     String
+  languageId  String
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  drama    Drama    @relation(fields: [dramaId], references: [id], onDelete: Cascade)
+  language Language @relation(fields: [languageId], references: [id])
+
+  @@unique([dramaId, languageId])
+  @@index([languageId])
+}
+
+model DramaCategory {
+  dramaId    String
+  categoryId String
+
+  drama    Drama    @relation(fields: [dramaId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([dramaId, categoryId])
+  @@index([categoryId]) /// browse-by-category reads this direction
+}
+
+/// Justified by the product model: CLAUDE.md §2 structures content as
+/// Drama → Season → Episode, PRD §1 repeats it, and ADM-04 (Season CRUD) is
+/// P0. A season also bounds the player feed — PLY-02 swipes within a season,
+/// not across a whole drama.
+model Season {
+  id           String        @id @default(cuid())
+  dramaId      String
+  seasonNumber Int
+  title        String?
+  description  String?
+  status       PublishStatus @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  drama    Drama     @relation(fields: [dramaId], references: [id], onDelete: Cascade)
+  episodes Episode[]
+
+  @@unique([dramaId, seasonNumber])
+  @@index([dramaId])
+}
+
+model Episode {
+  id            String  @id @default(cuid())
+  seasonId      String
+  episodeNumber Int
+  title         String
+  description   String?
+
+  // ── Video asset ───────────────────────────────────────────────────
+  // DEVIATION from DATABASE_SCHEMA.md §3, which names these columns
+  // muxAssetId / muxUploadId / muxPlaybackId.
+  //
+  // Reason: CLAUDE.md §19 requires a provider-independent video abstraction,
+  // and ADR-09 puts Mux behind a VideoProvider interface that is not installed
+  // (free-first, CLAUDE.md §18). Development uses locally generated HLS. A
+  // column named after one vendor either lies for the whole of development or
+  // forces a rename migration the day the provider changes. The shape is
+  // identical; only the names are vendor-neutral.
+  /// "local" (FFmpeg-generated HLS) or "mux". Identifies which provider the
+  /// identifiers below belong to.
+  videoProvider    String           @default("local")
+  videoAssetId     String?          @unique
+  videoUploadId    String?          @unique
+  /// Playback identifier. Under a signed-playback policy this is NEVER served
+  /// to a client directly — the backend mints a short-lived token for it
+  /// (CLAUDE.md §12).
+  videoPlaybackId  String?
+  processingStatus ProcessingStatus @default(PENDING)
+  processingError  String?
+  durationSec      Int?
+  aspectRatio      String? /// "9:16"
+  thumbnailKey     String?
+
+  // ── Access and publishing ─────────────────────────────────────────
+  accessType  AccessType    @default(PREMIUM)
+  /// Inert until the coin wallet ships in M7. Present from migration 1 because
+  /// ADR-10 and PRD PD-1 both require the schema to model per-episode unlock
+  /// before it is built. A column costs nothing; retrofitting pricing onto a
+  /// live catalogue is not free.
+  coinPrice   Int           @default(0)
+  status      PublishStatus @default(DRAFT)
+  scheduledAt DateTime? /// ADM-07 scheduled publication
+  publishedAt DateTime?
+
+  viewCount BigInt @default(0)
+  likeCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  season       Season         @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  subtitles    Subtitle[]
+  watchHistory WatchHistory[]
+  progressHead DramaProgress[] @relation("DramaProgressLastEpisode")
+
+  @@unique([seasonId, episodeNumber])
+  @@index([seasonId, episodeNumber]) /// paginated list and next-episode lookup
+  @@index([status, publishedAt])
+  @@index([status, scheduledAt]) /// the scheduled-publish job (ADM-07)
+  @@index([processingStatus]) /// the stuck-asset reconciler (ARCH R-6)
+}
+
+model Subtitle {
+  id         String   @id @default(cuid())
+  episodeId  String
+  languageId String
+  label      String
+  /// Storage key for the .vtt, or a provider text-track id.
+  storageKey String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  episode  Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  language Language @relation(fields: [languageId], references: [id])
+
+  @@unique([episodeId, languageId])
+  @@index([episodeId])
+}
+
+// ─────────────────────── Engagement & history ────────────────────────
+
+/// Per-episode playback position. One row per user per episode.
+model WatchHistory {
+  id            String   @id @default(cuid())
+  userId        String
+  episodeId     String
+  positionSec   Int      @default(0)
+  watchedSec    Int      @default(0) /// cumulative, for completion %
+  isCompleted   Boolean  @default(false)
+  lastWatchedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  episode Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, episodeId])
+  @@index([userId, lastWatchedAt(sort: Desc)])
+  @@index([episodeId])
+}
+
+/// The "WatchProgress" entity, named DramaProgress to match
+/// DATABASE_SCHEMA.md. Per-drama resume state: HIST-04 "Continue Watching"
+/// must not scan every WatchHistory row a user owns to find where they were.
+model DramaProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  dramaId         String
+  lastEpisodeId   String
+  positionSec     Int      @default(0)
+  episodesWatched Int      @default(0)
+  isCompleted     Boolean  @default(false)
+  lastWatchedAt   DateTime @default(now())
+
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drama       Drama   @relation(fields: [dramaId], references: [id], onDelete: Cascade)
+  /// DEVIATION from DATABASE_SCHEMA.md §3: lastEpisodeId is declared there as a
+  /// bare String with no relation. Making it a real foreign key is what stops
+  /// Continue Watching from resuming into an episode that was deleted.
+  /// Restrict, not Cascade: losing one episode must not erase a viewer's
+  /// progress through the whole drama.
+  lastEpisode Episode @relation("DramaProgressLastEpisode", fields: [lastEpisodeId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, dramaId])
+  @@index([userId, isCompleted, lastWatchedAt(sort: Desc)]) /// Continue Watching
+  @@index([lastEpisodeId])
+}
+
+/// The "UserFavorite" entity, named Favorite to match DATABASE_SCHEMA.md.
+model Favorite {
+  userId    String
+  dramaId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drama Drama @relation(fields: [dramaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, dramaId])
+  @@index([dramaId]) /// new-episode notification fan-out (NOT-02)
+  @@index([userId, createdAt(sort: Desc)]) /// the user's saved list
+}
+
+// ────────────────────────── Analytics (M2.3) ─────────────────────────
+
+/// Playback event taxonomy.
+///
+/// DEVIATION from DATABASE_SCHEMA.md §3, which specifies five values
+/// (START / HEARTBEAT / PAUSE / COMPLETE / ERROR).
+///
+/// Reason: M2.2 shipped an eight-value taxonomy to the client, defined in
+/// `packages/contracts` and already persisted in the mobile outbox on real
+/// devices. The document predates it. Matching the document instead would
+/// mean either rejecting events the installed app already produces, or
+/// lossily collapsing `resumed`, `episode_changed` and `abandoned` into the
+/// five older values — and `abandoned` in particular is the one that makes a
+/// drop-off curve computable (ADR-26).
+///
+/// These are lower_snake_case where every other enum here is SCREAMING_SNAKE,
+/// deliberately: the values are an analytics vocabulary that will outlive this
+/// schema and appear in dashboards and ad-hoc SQL. Renaming later means
+/// rewriting historical rows.
+enum PlaybackEventType {
+  playback_started
+  playback_paused
+  playback_resumed
+  playback_progress
+  playback_completed
+  playback_failed
+  episode_changed
+  playback_abandoned
+}
+
+/// Raw playback telemetry. ARCH §8.
+///
+/// DEVIATIONS from DATABASE_SCHEMA.md §3, each forced by the shipped client:
+///
+///   * `eventId` is the primary key, not an autoincrement BigInt. The client
+///     generates a UUID per event and the delivery pipeline is at-least-once
+///     (ADR-25), so ingestion MUST be idempotent. Making the client's id the
+///     primary key turns deduplication into a constraint the database
+///     enforces, rather than a check the application has to remember.
+///   * `occurredAt` (device clock) and `receivedAt` (server clock) are stored
+///     separately. A device clock can be wrong, unset or deliberately altered;
+///     an analytics table with only the client's timestamp cannot be trusted
+///     to order anything.
+///   * `dramaId` is denormalised onto the row. Every rollup groups by drama,
+///     and reaching Episode → Season → Drama for that is three joins on the
+///     largest table in the database.
+///   * `deltaSec` and `quality` from the document are absent: the client does
+///     not produce them. A column that is always null is worse than no column,
+///     because it looks like data.
+///
+/// Retention is 90 days (ARCH §8). The cleanup job arrives with the rollup in
+/// M6; until then this table is small and nothing depends on it being pruned.
+model PlaybackEvent {
+  /// The client's UUID. Idempotency key — see the note above.
+  eventId String @id
+
+  /// Groups every event from one visit to the player screen.
+  sessionId String
+
+  /// Null for a guest. No relation, matching DATABASE_SCHEMA.md: this table is
+  /// append-only and high-volume, and a foreign key would add a check to every
+  /// insert while coupling analytics retention to account deletion. Ownership
+  /// is enforced at write time by the identity middleware, not by the column.
+  userId String?
+
+  dramaId   String
+  episodeId String
+
+  type        PlaybackEventType
+  positionSec Float             @default(0)
+  /// Null until the player has resolved the media's real duration.
+  durationSec Float?
+  /// Only ever set on `playback_failed`. A stable code, never a raw message —
+  /// a player message can embed a signed URL (CLAUDE.md §11).
+  errorCode   String?
+
+  /// Device clock, from the client.
+  occurredAt DateTime
+  /// Server clock, set on insert. The trustworthy one.
+  receivedAt DateTime @default(now())
+
+  /// Allow-listed client context. Two fields only: platform and appVersion.
+  platform   String
+  appVersion String
+
+  @@index([episodeId, occurredAt])
+  @@index([dramaId, occurredAt])
+  @@index([sessionId])
+  @@index([receivedAt]) /// the 90-day retention sweep
+}

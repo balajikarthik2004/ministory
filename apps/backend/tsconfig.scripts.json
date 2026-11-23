@@ -1,0 +1,15 @@
+{
+  /* Typechecks the files that live outside src/ and are therefore outside the
+     build: the Prisma CLI config and the seed script.
+
+     They are run by tsx, never compiled into dist/, but they are real
+     TypeScript that can break. A seed script that only fails at `prisma db
+     seed` time is a seed script nobody typechecks in CI. */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["prisma/**/*.ts", "prisma.config.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

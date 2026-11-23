@@ -1,0 +1,13 @@
+NOT DIRECTLY COMPARABLE with the bench-p1-32k benchmark series.
+
+This P1 run used the OLD rate-proportional token-bucket burst:
+  burst = rate x 0.25 = 46,875 bytes
+
+The corrected configuration uses a FIXED 32,768-byte burst for every
+profile. A rate-proportional burst gave the faster profile a larger
+head start, which flattered time-to-first-frame unevenly between
+profiles - so this result cannot be compared either with the
+benchmark series or with the P1 run beside it.
+
+Retained unaltered as a record of what was actually run.
+Not re-run at this stage, by user direction.

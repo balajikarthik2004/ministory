@@ -1,0 +1,31 @@
+{
+  "experimentId": "A-single",
+  "startedAt": "2026-11-15T09:14:35.155Z",
+  "durationMs": 35074,
+  "timeToFirstFrameMs": {
+    "count": 18,
+    "minMs": 554,
+    "maxMs": 1145,
+    "meanMs": 807,
+    "p50Ms": 801,
+    "p75Ms": 985
+  },
+  "transitionLatencyMs": {
+    "count": 18,
+    "minMs": 554,
+    "maxMs": 1145,
+    "meanMs": 807,
+    "p50Ms": 801,
+    "p75Ms": 985
+  },
+  "episodesStarted": 18,
+  "transitions": 30,
+  "playbackErrors": 0,
+  "audioOverlapIncidents": 0,
+  "stalls": 0,
+  "playersCreated": 1,
+  "playersReleased": 1
+}
+
+events captured: 148
+event types: {"player-created":1,"source-set":31,"status-change":25,"transition-start":30,"first-frame":18,"transition-complete":18,"playing-change":24,"player-released":1}

@@ -12,6 +12,10 @@
 export * from './common/errors.js';
 export * from './common/envelope.js';
 export * from './health/health.schema.js';
+export * from './catalogue/catalogue.schema.js';
+export * from './library/library.schema.js';
+export * from './auth/auth.schema.js';
+export * from './playback/playback.schema.js';
 
 /** API version carried in the URL path: /api/v1. */
 export const API_VERSION = 'v1' as const;

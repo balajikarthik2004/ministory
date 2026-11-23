@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -58,6 +59,28 @@ export function createApp(): Express {
 
   app.use(express.json({ limit: MAX_JSON_BODY_SIZE }));
   app.use(express.urlencoded({ extended: true, limit: MAX_JSON_BODY_SIZE }));
+
+  /*
+   * The public account-deletion page (M2.6, D4).
+   *
+   * OUTSIDE `/api`, DELIBERATELY. It is a page for a person with a browser,
+   * not an endpoint for a client, and it must stay reachable at a stable
+   * address across API version bumps — the URL goes in a store listing, where
+   * changing it later is not a deploy but a review.
+   *
+   * It is a single static file with no form, no input and no JavaScript, so
+   * it reads nothing and can decide nothing. `helmet` above already sends the
+   * security headers; nothing here needs its own.
+   *
+   * Hosting is not settled (D5, and SYSTEM_ARCHITECTURE.md §11 is still
+   * unapproved). Serving it from the API origin costs nothing and keeps the
+   * page versioned with the behaviour it describes, which is the property
+   * that matters most — a deletion page that drifts from what deletion
+   * actually does is worse than none.
+   */
+  app.get('/account-deletion', (_req, res) => {
+    res.sendFile(resolve(import.meta.dirname, '..', 'public', 'account-deletion.html'));
+  });
 
   // Unversioned aliases so orchestrators and uptime checks have a stable path
   // that survives an API version bump.

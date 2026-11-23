@@ -1,88 +1,47 @@
-import type { JSX } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { API_BASE_PATH } from '@minidrama/contracts';
-import { colors, spacing, typography } from '@minidrama/ui-tokens';
+import { useCallback, useEffect, useState, type JSX } from 'react';
+import { Redirect } from 'expo-router';
+import { SplashScreen } from '../features/splash/SplashScreen';
+import { initialiseSession, useSessionStore } from '../store/session.store';
+import { hasSeenOnboarding } from '../services/auth/onboarding';
 
 /**
- * Milestone 1.1 placeholder screen.
+ * Entry route — the splash, the session, then the app.
  *
- * Scaffolding, not a product screen. It exists to prove Expo Router renders and
- * that both workspace packages resolve through Metro. The splash, onboarding
- * and home screens are Milestone 2.
+ * AUTH-01 ASKS FOR AUTH STATE RESOLVED AND ROUTED WITHIN 1.5 SECONDS ON A
+ * COLD START, and the shape of this component is what makes that achievable:
+ * the restore runs CONCURRENTLY with the splash animation rather than after
+ * it. Both have to finish, so the cost is the slower of the two rather than
+ * their sum — and on a warm network the restore finishes well inside the
+ * animation, making it free.
+ *
+ * THERE IS NO SIGNED-OUT DEAD END. Guest browsing is P0 (PRD AUTH-03), so a
+ * viewer with no account, a failed restore, or no network at all still lands
+ * on Home. The authentication screens are reached deliberately from Profile
+ * or from a locked episode — never as a wall in front of the catalogue.
+ *
+ * Which is why this file routes on ONBOARDING, not on sign-in state.
  */
-export default function FoundationScreen(): JSX.Element {
-  const insets = useSafeAreaInsets();
+export default function Entry(): JSX.Element {
+  const [splashDone, setSplashDone] = useState(false);
+  const initialising = useSessionStore((state) => state.initialising);
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
 
-  return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.xl }]}>
-      <Text style={styles.eyebrow}>MILESTONE 1.1</Text>
-      <Text style={styles.title}>MiniDrama</Text>
-      <Text style={styles.body}>
-        Foundation scaffold. Expo Router is running and the workspace packages resolve.
-      </Text>
+  const handleFinish = useCallback(() => setSplashDone(true), []);
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>API base path</Text>
-        <Text style={styles.cardValue}>{API_BASE_PATH}</Text>
-      </View>
+  useEffect(() => {
+    /*
+     * Both run on mount, in parallel. `initialiseSession` resolves the stored
+     * refresh token or creates a guest session; `hasSeenOnboarding` reads one
+     * key from the keystore. Neither blocks the other, and neither blocks the
+     * splash.
+     */
+    void initialiseSession();
+    void hasSeenOnboarding().then((seen) => setNeedsOnboarding(!seen));
+  }, []);
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Accent token</Text>
-        <View style={styles.swatchRow}>
-          <View style={styles.swatch} />
-          <Text style={styles.cardValue}>{colors.accent.primary}</Text>
-        </View>
-      </View>
-    </View>
-  );
+  const ready = splashDone && !initialising && needsOnboarding !== null;
+
+  if (!ready) return <SplashScreen onFinish={handleFinish} />;
+  if (needsOnboarding) return <Redirect href="/onboarding" />;
+  return <Redirect href="/home" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.primary,
-    paddingHorizontal: spacing.lg,
-  },
-  eyebrow: {
-    ...typography.micro,
-    color: colors.text.tertiary,
-    letterSpacing: 1.5,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.text.primary,
-    marginTop: spacing.xs,
-  },
-  body: {
-    ...typography.body,
-    color: colors.text.secondary,
-    marginTop: spacing.sm,
-  },
-  card: {
-    backgroundColor: colors.bg.card,
-    borderRadius: spacing.md,
-    padding: spacing.lg,
-    marginTop: spacing.lg,
-    gap: spacing.xs,
-  },
-  cardLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-  },
-  cardValue: {
-    ...typography.bodyStrong,
-    color: colors.text.primary,
-  },
-  swatchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  swatch: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.accent.primary,
-  },
-});

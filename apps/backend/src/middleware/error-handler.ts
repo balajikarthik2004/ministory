@@ -44,6 +44,35 @@ export function errorHandler(
     return;
   }
 
+  /*
+   * A body the parser could not read.
+   *
+   * `express.json()` throws for malformed JSON, a body that is not an object
+   * or array under its default strict mode, a wrong charset, and a payload
+   * over the size cap. Those are all client mistakes, but the error reaches
+   * here as a plain `SyntaxError` and would otherwise be reported as a 500 —
+   * which tells the client to retry something that can never succeed, and
+   * fills error monitoring with alerts for other people's typos.
+   *
+   * The parser's own message is not forwarded: it can quote the offending
+   * body back, which for a request carrying a token is a reflected leak.
+   */
+  if (isBodyParserError(err)) {
+    const status = err.status === 413 ? 413 : 400;
+    const code = status === 413 ? 'VALIDATION_ERROR' : 'VALIDATION_ERROR';
+    logger.warn({ requestId, path: req.path, type: err.type }, 'Malformed request body');
+    sendError(
+      res,
+      status,
+      code,
+      status === 413
+        ? 'That request was too large.'
+        : 'The request body could not be read as JSON.',
+      { requestId },
+    );
+    return;
+  }
+
   if (err instanceof ZodError) {
     const details: ErrorDetail[] = err.issues.map((issue) => ({
       field: issue.path.join('.') || '(root)',
@@ -73,4 +102,17 @@ export function errorHandler(
       : `Unhandled error: ${err instanceof Error ? err.message : String(err)}`,
     { requestId },
   );
+}
+
+/**
+ * Recognises an error thrown by `express.json()` / `body-parser`.
+ *
+ * Identified by the `type` property body-parser attaches (`entity.parse.failed`,
+ * `entity.too.large`, `encoding.unsupported`, …) rather than by `instanceof
+ * SyntaxError`, which would also catch genuine bugs in our own code.
+ */
+function isBodyParserError(err: unknown): err is { type: string; status?: number } {
+  if (typeof err !== 'object' || err === null) return false;
+  const candidate = err as { type?: unknown; expose?: unknown };
+  return typeof candidate.type === 'string' && candidate.type.length > 0 && 'expose' in candidate;
 }

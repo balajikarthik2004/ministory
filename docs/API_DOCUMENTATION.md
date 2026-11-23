@@ -66,39 +66,217 @@ Exceeding a limit returns `429 RATE_LIMITED` with `Retry-After`.
 
 ## 2. Authentication
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| POST | `/auth/session` | none | Exchange a Firebase ID token for our access + refresh tokens |
-| POST | `/auth/guest` | none | Create or resume an anonymous session |
-| POST | `/auth/refresh` | refresh token | Rotate the token pair |
-| POST | `/auth/logout` | access | Revoke the current session |
-| POST | `/auth/merge` | access | Merge an anonymous account into the signed-in one (AUTH-06) |
-| GET | `/auth/me` | access | Current user, profile and entitlement summary |
-| DELETE | `/auth/account` | access | Request account deletion (AUTH-09) |
+**Implemented in M2.5.** Email and password, with the backend issuing its own
+access and refresh tokens (ADR-07, ADR-37). Google Sign-In and phone OTP are
+still ADR-06 and still deferred.
 
-**POST `/auth/session`**
+| Method | Path | Auth | Rate limit (per 15 min) | Purpose |
+|---|---|---|---|---|
+| POST | `/auth/register` | none | 5 per IP+email | Create an account; sends a confirmation email |
+| POST | `/auth/login` | none | 10 per IP+email | Exchange credentials for a session |
+| POST | `/auth/guest` | none | 5 per install, 60 per IP | Create or resume an anonymous session |
+| POST | `/auth/refresh` | refresh token | 60 per IP | Rotate the token pair |
+| POST | `/auth/logout` | access | — | Revoke this session, or all of them |
+| GET | `/auth/me` | access | — | Current user, profile and verification state |
+| POST | `/auth/change-password` | access | — | Change the password; revokes every session |
+| POST | `/auth/forgot-password` | none | 5 per IP+email | Request a reset link |
+| POST | `/auth/reset-password` | none | 30 per IP | Set a new password from an emailed token |
+| POST | `/auth/verify-email` | none | 30 per IP | Confirm an address from an emailed token |
+| POST | `/auth/resend-verification` | access | 5 per IP | Send the confirmation email again |
+| POST | `/auth/merge` | access | 5 per IP+email | Upgrade the calling guest into an account (AUTH-06) |
+| DELETE | `/auth/account` | access | 5 per user | Delete the calling account, immediately (AUTH-09) |
+| POST | `/auth/deletion-receipt` | none | 30 per IP | Ask whether a deletion was recorded (M2.6) |
+
+Not yet implemented: `POST /auth/google`, and the web-initiated deletion pair
+`POST /auth/request-deletion` / `POST /auth/confirm-deletion`, which are
+designed but wait on a real mail sender (ADR-42).
+
+Also public, outside `/api`: **`GET /account-deletion`** — a static page
+explaining how to delete an account and what that removes. No form, no input,
+no JavaScript, so it has no enumeration surface and no unauthenticated deletion
+path.
+
+### The rules this surface is built around
+
+**No request carries a user id.** Not one schema in the authentication
+contract has a `userId` field. The caller is whoever their credential says
+they are, resolved by middleware; a body-supplied id would be an ownership
+claim the server has to disprove (CLAUDE.md §11).
+
+**No response says whether an account exists.** Registration, login and
+password reset answer identically either way, and login spends the same CPU on
+an unknown address as on a real one. See ADR-39 for what that costs.
+
+**POST `/auth/register`**
 
 ```jsonc
 // request
-{ "firebaseIdToken": "eyJhbGci...", "deviceId": "a3f...", "platform": "android" }
+{ "email": "priya@example.com", "password": "at least twelve chars", "displayName": "Priya" }
+
+// 201 — IDENTICAL whether or not the address was already taken
+{ "success": true, "data": { "accepted": true, "message": "If that email address can receive mail, we have sent a message to it. Check your inbox." } }
+```
+
+It deliberately returns **no session**: a byte-identical response for both
+cases cannot carry one. The duplicate path creates nothing and emails the real
+owner a notice instead.
+
+**POST `/auth/login`**
+
+```jsonc
+// request
+{ "email": "priya@example.com", "password": "...", "deviceId": "a3f...", "platform": "android" }
 
 // 200
 {
   "success": true,
   "data": {
-    "accessToken": "eyJ...",          // 15 min
-    "refreshToken": "rt_...",         // 60 days, rotates on every refresh
+    "accessToken": "eyJ...",        // JWT, 15 min, HS256, iss+aud validated
+    "refreshToken": "rt_...",       // opaque, 60 days, rotates on every use
     "expiresIn": 900,
-    "user": {
-      "id": "cmg...", "displayName": "Priya", "isAnonymous": false,
-      "preferredLanguage": { "id": "cmg...", "code": "ta", "name": "Tamil" },
-      "entitlement": { "hasActiveSubscription": true, "expiresAt": "2026-12-15T00:00:00Z", "coinBalance": 120 }
-    }
+    "emailVerified": false,
+    "user": { "id": "cmg...", "displayName": "Priya", "isAnonymous": false, ... }
+  }
+}
+
+// 401 — the same body for a wrong password AND an unknown account
+{ "success": false, "error": { "code": "UNAUTHENTICATED", "message": "That email address and password do not match an account." } }
+```
+
+`user` is the same `UserProfile` the library module returns. `emailVerified`
+is display-only; the server re-reads `User.emailVerifiedAt` wherever
+verification actually matters.
+
+**POST `/auth/guest`**
+
+```jsonc
+// request
+{ "deviceId": "a3f...", "platform": "android" }
+```
+
+Creates a real `User` row with `isAnonymous = true`, or resumes the existing
+one for that install. The device id is a label, not a credential: it resumes a
+session only when a live, unrevoked session row is bound to it, so a guessed
+id yields a *new* guest account rather than somebody else's (ADR-41).
+
+**POST `/auth/refresh`**
+
+Rotates. The presented token is revoked and a successor issued, atomically.
+
+**Presenting an already-rotated token revokes the whole session family** and
+returns 401 — a replay means two parties hold tokens from one chain, and there
+is no way to tell which holder is legitimate (ADR-40). Clients must therefore
+collapse concurrent refreshes into one request, or they will trigger this
+against themselves; see ADR-45.
+
+**POST `/auth/merge`**
+
+The guest is identified by the **access token**, never by a body field — a
+`guestUserId` parameter would let anyone adopt anyone's anonymous account and
+inherit its history.
+
+```jsonc
+// request
+{ "email": "priya@example.com", "password": "...", "displayName": "Priya" }
+
+// 200
+{
+  "success": true,
+  "data": {
+    "session": { "accessToken": "...", "refreshToken": "...", "expiresIn": 900, "user": {...} },
+    "moved": { "watchHistory": 3, "dramaProgress": 1, "favorites": 2, "playbackEvents": 41 }
   }
 }
 ```
 
-`entitlement` is informational for UI only. It is never the basis of a playback decision — that is re-evaluated server-side on every token request (CLAUDE.md §11).
+If the address is free the guest row is promoted in place and `moved` is all
+zeros — nothing had to move. If the address already has an account, **that
+account's password is required** and the guest's activity is folded in;
+`moved` reports what actually crossed over. Rows that would collide are
+dropped and the registered account's keep their values (ADR-41).
+
+**DELETE `/auth/account`** (M2.6)
+
+```jsonc
+// request — password omitted for a guest, which has none (ADR-41)
+// header: Idempotency-Key: <256-bit client-generated receipt id>
+{ "password": "...", "confirm": "DELETE" }
+
+// 200
+{ "success": true, "data": {
+    "accepted": true,
+    "deletedAt": "2026-11-18T10:14:22.901Z",
+    "removed": { "watchHistory": 128, "dramaProgress": 9, "favorites": 14,
+                 "sessions": 3, "verificationTokens": 1 },
+    "receiptRecorded": true,
+    "message": "Your account and viewing history have been deleted."
+} }
+```
+
+Deletion is **immediate and irreversible**. One transaction nulls every direct
+identifier on `User`, sets `status = DELETED`, moves `tokensValidFrom` forward
+and hard-deletes the profile, sessions, verification tokens, watch history,
+drama progress and favourites — decrementing `Drama.favoriteCount` as it goes.
+`PlaybackEvent.userId` is nulled immediately afterwards, outside that
+transaction, with its own recorded status (ADR-49). The address is freed: the
+same email may register again and gets a genuinely new account.
+
+**A wrong or missing password is 403, not 401** (ADR-46). The caller is
+authenticated — it is the password that was refused, and the session stays
+usable. This matters because a *successful* deletion makes every later request
+401, so collapsing the two would leave a client unable to tell "I typed it
+wrong" from "it already worked".
+
+**POST `/auth/deletion-receipt`**
+
+```jsonc
+// request — no credential; there is none left to present
+{ "receiptId": "<the id sent as Idempotency-Key>" }
+
+// 200
+{ "success": true, "data": { "deleted": true, "deletedAt": "2026-11-18T10:14:22.901Z" } }
+{ "success": true, "data": { "deleted": false, "deletedAt": null } }
+```
+
+**Clients must not infer deletion from a 401.** A deletion destroys the
+credential that would ask again, so a 401 afterwards means the session is dead,
+the token expired, or the deletion succeeded with its response lost. The
+receipt is the only way to tell. The client generates the id and persists it
+**before** sending the delete; on any 401 or transport failure it asks here,
+and tears down local data only on `deleted: true` (ADR-47).
+
+An unknown id answers `deleted: false`, not 404 — it reveals nothing either
+way, and the endpoint accepts only a value the server never issues.
+
+### Token lifecycle
+
+| | Access | Refresh |
+|---|---|---|
+| Form | JWT, HS256 | Opaque, 32 random bytes |
+| Lifetime | 15 min | 60 days, rotating |
+| Stored | Client memory only | SHA-256 hash in `Session` (ADR-38) |
+| Validated | signature, `iss`, `aud`, `exp`, `typ` | row lookup, revocation, expiry |
+| Revocable | via `User.tokensValidFrom` | immediately, per row or per family |
+
+A password change or reset moves `User.tokensValidFrom` forward, which
+invalidates every access token already in circulation rather than waiting out
+the fifteen minutes (ADR-40).
+
+`TOKEN_EXPIRED` is returned separately from `UNAUTHENTICATED` because clients
+act on the difference: expired means refresh and retry silently, anything else
+means the session is finished.
+
+### Error codes used here
+
+| Code | Status | When |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Malformed body; an expired, consumed or unknown emailed token |
+| `UNAUTHENTICATED` | 401 | Wrong credentials, unknown account, suspended account, dead session |
+| `TOKEN_EXPIRED` | 401 | The access token's `exp` has passed, or it predates a revocation |
+| `FORBIDDEN` | 403 | Changing a password on an account that has none (a guest); a wrong or missing password on account deletion (ADR-46) |
+| `RESOURCE_CONFLICT` | 409 | Merging an account that is already registered |
+| `RATE_LIMITED` | 429 | Over the allowance above; carries `Retry-After` |
+| `SERVICE_UNAVAILABLE` | 503 | Password reset with no mail delivery configured (ADR-42) |
 
 ---
 
@@ -110,6 +288,7 @@ Exceeding a limit returns `429 RATE_LIMITED` with `Retry-After`.
 | Playback token — free episode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Playback token — premium | ❌ | entitlement | — | — | — | — |
 | History / favourites | ✅* | ✅ | — | — | — | — |
+| Delete own account | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Purchases | ❌ | ✅ | — | — | — | — |
 | Admin analytics | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Content reports queue | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
@@ -117,7 +296,12 @@ Exceeding a limit returns `429 RATE_LIMITED` with `Retry-After`.
 | User suspension | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
 | Admin user management | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-\* Guests get history and favourites against their anonymous account, which merges on sign-in.
+\* Guests get history and favourites against their anonymous account, which merges on sign-in. **Implemented in M2.5** — `POST /auth/guest` and `POST /auth/merge`.
+
+Account deletion is **own-account only**, for guests and registered users
+alike. No admin role can delete a consumer account in M2.6; admin-initiated
+deletion arrives with the admin module in M5 and will write the same
+`AccountDeletion` row with `source = ADMIN`.
 
 ---
 
@@ -225,20 +409,58 @@ Image URLs are resolved server-side from R2 keys, so the CDN domain is a backend
 
 Server-side rules on this endpoint, in order: episode and drama both `PUBLISHED` → entitlement evaluated from the database (never from the request) → token signed with the Mux private key held only in backend env → `exp` set to at least twice the episode duration so playback cannot expire mid-stream.
 
-**POST `/playback/events`** — batched, fire-and-forget:
+**POST `/playback/events`** — batched, fire-and-forget. Shape defined by
+`playbackEventBatchSchema` in `packages/contracts` (implemented client-side in
+M2.2; server-side in M2.3):
 
 ```jsonc
 {
-  "sessionId": "ps_01HX...",
   "events": [
-    { "episodeId": "cmg...", "type": "START",     "positionSec": 0,  "at": "2026-11-15T12:00:00Z" },
-    { "episodeId": "cmg...", "type": "HEARTBEAT", "positionSec": 15, "deltaSec": 15, "at": "..." },
-    { "episodeId": "cmg...", "type": "COMPLETE",  "positionSec": 92, "deltaSec": 7,  "at": "..." }
+    {
+      "eventId": "9f1c0f6e-...",          // client-generated; the idempotency key
+      "sessionId": "ps_9f1c0f6e-...",     // one per visit to the player screen
+      "dramaId": "cmg...",
+      "episodeId": "cmg...",
+      "type": "playback_started",
+      "occurredAt": "2026-11-16T12:00:00.000Z",
+      "positionSec": 0,
+      "durationSec": 92,                  // null until the player resolves it
+      "errorCode": null,                  // only on playback_failed
+      "context": { "platform": "android", "appVersion": "0.1.0" }
+    }
   ]
 }
 ```
 
-Returns `202 Accepted` with no body. Clients never block playback on this call, and a failure here is logged and dropped — telemetry must never degrade the viewing experience.
+**Event types** (eight; see the contract for what each one means):
+`playback_started` · `playback_paused` · `playback_resumed` ·
+`playback_progress` · `playback_completed` · `playback_failed` ·
+`episode_changed` · `playback_abandoned`.
+
+`playback_progress` is the heartbeat, emitted every 15 seconds and on seeks
+(SYSTEM_ARCHITECTURE.md §8).
+
+**Response** names what was durably stored:
+
+```jsonc
+{ "success": true, "data": { "acceptedEventIds": ["9f1c0f6e-...", "..."] } }
+```
+
+Not a bare `202`. The client deletes only the events the server names, and
+retries the rest — it must never drop something it cannot prove was stored.
+A partial accept is a normal outcome, not an error.
+
+**Three rules ingestion must honour** (ADR-25):
+
+1. `eventId` is the idempotency key. The client delivers at least once and
+   will resend a batch whose response was lost, so a repeat must be a no-op.
+2. `occurredAt` is the device's clock and is not trusted. Record a server-side
+   receipt time alongside it.
+3. `context` is an allow-list of two fields. Do not accept or store more; the
+   client deliberately sends no device or personal identifiers.
+
+Clients never block playback on this call, and a failure is queued and retried
+rather than surfaced — telemetry must never degrade the viewing experience.
 
 ---
 
@@ -333,10 +555,35 @@ Mux events consumed: `video.asset.ready` (store playbackId, duration, aspect rat
 
 ## 10. Health
 
-| Path | Purpose |
-|---|---|
-| `GET /health` | Liveness — process is up |
-| `GET /ready` | Readiness — DB reachable, Mux credentials valid |
+| Path | Purpose | Status codes |
+|---|---|---|
+| `GET /health` | Liveness — the process is up. Checks no dependency: restarting the process will not fix an outage elsewhere. | always `200` while serving |
+| `GET /ready` | Readiness — should this instance receive traffic? | `200` when every dependency is `ok`, `503` otherwise |
+
+Both are also mounted under the versioned prefix (`/api/v1/health`, `/api/v1/ready`); the unversioned paths are the stable ones for orchestrators and uptime checks.
+
+`/ready` returns a `dependencies` array. As of M1.3 it holds one entry:
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "ok",
+    "service": "minidrama-api",
+    "version": "0.1.0",
+    "environment": "development",
+    "uptimeSeconds": 42,
+    "timestamp": "2026-11-15T15:42:40.619Z",
+    "dependencies": [
+      { "name": "postgres", "status": "ok", "latencyMs": 30, "message": "Connection healthy" }
+    ]
+  }
+}
+```
+
+When Postgres is unreachable the entry becomes `{"name": "postgres", "status": "down", "message": "Database unreachable"}` and the response is `503`. **The `message` is fixed text, never the driver's.** Database errors name the host, port and user; `/ready` is unauthenticated, so none of that may appear in a response body (CLAUDE.md §11). The real error goes to the log.
+
+The video provider joins this list in M4.
 
 ---
 
@@ -346,3 +593,11 @@ Mux events consumed: `video.asset.ready` (store playbackId, duration, aspect rat
 2. **Episode-list page size** — 20 is the proposed default for a 60-episode season. Worth validating against the real grid design.
 3. **Heartbeat interval** — 15s proposed. Shorter means better resume precision and more write volume; this is a direct trade against R-7.
 4. **Guest playback tokens** — rate-limited by IP in the proposal. Shared-NAT mobile networks in India will cause false positives; a device-bound guest token is the better key. Needs a decision before launch.
+
+   **Partially addressed in M2.4.** `POST /playback/events` now keys its rate
+   limit on the authenticated user id wherever there is one, falling back to
+   IP only for unauthenticated callers, and the limit is set generously (120
+   requests per minute) precisely because the IP fallback is unreliable. The
+   device-bound guest token is still the real fix and is still open; M2.5's
+   authentication work is where it belongs. The limiter is also per process,
+   so it is not yet correct behind more than one instance (ADR-34).

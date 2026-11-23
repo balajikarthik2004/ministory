@@ -1,0 +1,233 @@
+<!doctype html>
+<!--
+  MiniDrama — public account deletion information page (M2.6, D4).
+
+  STATIC BY DESIGN. No form, no input, no JavaScript, no account lookup — so
+  there is no enumeration surface and no unauthenticated path that could
+  delete anything. Deletion happens in the app, where the person is
+  authenticated; this page exists so that someone who does not have the app
+  open can still find out how, and what it does.
+
+  NO LEGAL CLAIMS APPEAR HERE (M2.6 R4). No statute, regulation or policy is
+  named, and no retention period is presented as a legal requirement. Every
+  sentence describes what the system actually does. Anything that needs a
+  lawyer's sign-off belongs in a privacy policy written by one, not in a page
+  generated alongside the code.
+
+  The email-initiated request flow is designed (M2.6 §8.2) and ships when
+  there is a real mail sender; promising "check your inbox" while
+  MAIL_PROVIDER=file would be the mistake ADR-42 exists to prevent.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="index, follow" />
+    <title>Delete your MiniDrama account</title>
+    <meta
+      name="description"
+      content="How to delete your MiniDrama account, and exactly what is removed when you do."
+    />
+    <style>
+      /* Values mirror @minidrama/ui-tokens. Inlined because this page must
+         render with no build step and no network request. */
+      :root {
+        --bg: #090a0f;
+        --surface: #151720;
+        --card: #1d202b;
+        --accent: #f5b544;
+        --text: #ffffff;
+        --muted: #a4a8b5;
+        --border: #2a2e3c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 3rem 1rem 4rem;
+      }
+      header {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      .wordmark {
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: var(--accent);
+        margin: 0 0 0.75rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+        line-height: 1.25;
+        margin: 0;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin: 2.5rem 0 0.75rem;
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      ol.steps {
+        counter-reset: step;
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+      }
+      ol.steps li {
+        counter-increment: step;
+        position: relative;
+        padding: 0.65rem 0 0.65rem 2.75rem;
+      }
+      ol.steps li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0;
+        top: 0.65rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 999px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        color: var(--accent);
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1.25rem 1.5rem;
+        margin: 1rem 0;
+      }
+      .card ul {
+        margin: 0.5rem 0 0;
+        padding-left: 1.25rem;
+      }
+      .card li {
+        margin: 0.35rem 0;
+      }
+      .card h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--text);
+      }
+      .warn {
+        border-left: 3px solid var(--accent);
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+      }
+      a {
+        color: var(--accent);
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="wordmark">MiniDrama</p>
+        <h1>Delete your account</h1>
+      </header>
+
+      <p>
+        You can delete your MiniDrama account at any time from inside the app. Deletion happens
+        straight away and cannot be undone.
+      </p>
+
+      <h2>How to delete your account</h2>
+      <ol class="steps">
+        <li>Open MiniDrama and go to the <strong>Profile</strong> tab.</li>
+        <li>Scroll to <strong>Account</strong>.</li>
+        <li>Tap <strong>Delete account</strong>.</li>
+        <li>Read what will be removed, then tap <strong>Continue</strong>.</li>
+        <li>
+          Enter your password to confirm. If you have been watching without an account, type
+          <strong>DELETE</strong> instead.
+        </li>
+      </ol>
+
+      <h2>What is deleted</h2>
+      <div class="card">
+        <h3>Removed immediately and permanently</h3>
+        <ul>
+          <li>Your email address, phone number and password</li>
+          <li>Your profile, display name and preferences</li>
+          <li>Everything you have watched, and where you stopped in each episode</li>
+          <li>Your saved dramas</li>
+          <li>Every device you are signed in on is signed out</li>
+        </ul>
+      </div>
+
+      <h2>What is kept</h2>
+      <div class="card">
+        <h3>Anonymous viewing statistics</h3>
+        <ul>
+          <li>
+            Counts of how often episodes were played and how far into them people watched. Your
+            account is unlinked from these before they are kept, so they cannot be traced back to
+            you.
+          </li>
+          <li>They are deleted entirely within 90 days.</li>
+          <li>They contain no email address, phone number, name or device identifier.</li>
+        </ul>
+      </div>
+
+      <div class="warn">
+        <p>
+          <strong>Deletion is immediate and permanent.</strong> There is no recovery period and no
+          way to restore an account afterwards. You can sign up again with the same email address,
+          but it will be a new account — nothing from the old one carries over.
+        </p>
+      </div>
+
+      <h2>If you cannot open the app</h2>
+      <p>
+        If you have lost access to your device or can no longer sign in, write to
+        <a href="mailto:privacy@minidrama.app">privacy@minidrama.app</a> from the email address on
+        the account and we will delete it for you.
+      </p>
+
+      <footer>
+        <p>MiniDrama · Last updated 18 November 2026</p>
+      </footer>
+    </main>
+  </body>
+</html>

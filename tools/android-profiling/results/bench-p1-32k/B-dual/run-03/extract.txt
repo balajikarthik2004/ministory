@@ -1,0 +1,31 @@
+{
+  "experimentId": "B-dual",
+  "startedAt": "2026-11-15T09:17:22.289Z",
+  "durationMs": 35269,
+  "timeToFirstFrameMs": {
+    "count": 20,
+    "minMs": 1055,
+    "maxMs": 2049,
+    "meanMs": 1597,
+    "p50Ms": 1737,
+    "p75Ms": 1896
+  },
+  "transitionLatencyMs": {
+    "count": 15,
+    "minMs": 78,
+    "maxMs": 910,
+    "meanMs": 633,
+    "p50Ms": 686,
+    "p75Ms": 790
+  },
+  "episodesStarted": 20,
+  "transitions": 30,
+  "playbackErrors": 0,
+  "audioOverlapIncidents": 0,
+  "stalls": 1,
+  "playersCreated": 2,
+  "playersReleased": 2
+}
+
+events captured: 160
+event types: {"player-created":2,"source-set":32,"status-change":30,"transition-start":30,"first-frame":20,"transition-complete":15,"playing-change":28,"stall":1,"player-released":2}

@@ -1,0 +1,15 @@
+{
+  /* The test suite.
+
+     Typechecked separately because it lives outside rootDir and is never
+     compiled into dist/ — but it is real TypeScript that can break, and a
+     test that only fails at `pnpm test` time is a test nobody typechecks in
+     review. Mirrors apps/mobile/tsconfig.tests.json. */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["tests/**/*.ts", "src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

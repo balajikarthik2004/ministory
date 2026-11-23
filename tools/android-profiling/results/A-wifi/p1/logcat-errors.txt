@@ -1,0 +1,11 @@
+--------- beginning of main
+11-15 14:05:15.189   649   649 E lowmemorykiller: device memory 712235 free 86984 file 599697
+11-15 14:05:15.206   649   649 E lowmemorykiller: device memory 713591 free 88356 file 599794
+11-15 14:05:15.309   649   649 E lowmemorykiller: device memory 713830 free 87708 file 600727
+11-15 14:05:15.410   649   649 E lowmemorykiller: device memory 714199 free 87617 file 601187
+11-15 14:05:15.512   649   649 E lowmemorykiller: device memory 714148 free 87562 file 601191
+11-15 14:05:15.613   649   649 E lowmemorykiller: device memory 713959 free 87342 file 601206
+11-15 14:05:15.713   649   649 E lowmemorykiller: device memory 713482 free 86783 file 601320
+11-15 14:05:15.914   649   649 E lowmemorykiller: device memory 704841 free 85634 file 601402
+11-15 14:05:16.115   649   649 E lowmemorykiller: device memory 701813 free 82204 file 601861
+11-15 14:05:16.216   649   649 E lowmemorykiller: device memory 701291 free 80621 file 603114

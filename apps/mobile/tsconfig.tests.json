@@ -1,0 +1,23 @@
+{
+  /* The test suite.
+
+     Tests run under Node, not React Native, so this config is the one place
+     Node's types are in scope. It also pulls in the service modules the tests
+     import, so a change that breaks a repository's signature fails here as
+     well as in the app's own typecheck. */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    /* The test harness constructs objects from `node:sqlite`, whose row type
+       is `unknown`-ish; the casts are deliberate and local. */
+    "lib": ["ES2023"]
+  },
+  "include": [
+    "tests/**/*.ts",
+    "services/**/*.ts",
+    "store/**/*.ts",
+    "data/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".expo", "dist"]
+}

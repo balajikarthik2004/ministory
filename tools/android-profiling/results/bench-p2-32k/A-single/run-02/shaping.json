@@ -1,0 +1,27 @@
+{
+  "profile": "p2",
+  "label": "P2 \"4G typical\"",
+  "configured": {
+    "bandwidthBitsPerSec": 5000000,
+    "bandwidthMegabitsPerSec": 5,
+    "responseDelayMs": 60,
+    "latencySemantics": "application-layer delay before the first byte of each HTTP response; approximately +1x per HTTP round trip. NOT physical network RTT. TCP/TLS handshakes are not delayed.",
+    "packetLoss": "none - not modelled",
+    "jitter": "none - not modelled",
+    "bucket": {
+      "chunkBytes": 16384,
+      "burstBytes": 32768,
+      "burstPolicy": "fixed, not rate-proportional, so profiles stay comparable on TTFF",
+      "shared": "one bucket for all concurrent requests"
+    }
+  },
+  "measured": {
+    "windowSec": 35.346,
+    "bitsPerSec": 3717370,
+    "megabitsPerSec": 3.717,
+    "requests": 121,
+    "bytesSent": 16424272,
+    "meanResponseMs": 273,
+    "startedAt": "2026-11-15T12:10:22.938Z"
+  }
+}

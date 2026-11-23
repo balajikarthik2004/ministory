@@ -1,0 +1,31 @@
+{
+  "experimentId": "C-pool",
+  "startedAt": "2026-11-15T09:11:47.043Z",
+  "durationMs": 35044,
+  "timeToFirstFrameMs": {
+    "count": 13,
+    "minMs": 1043,
+    "maxMs": 2331,
+    "meanMs": 1588,
+    "p50Ms": 1604,
+    "p75Ms": 1933
+  },
+  "transitionLatencyMs": {
+    "count": 9,
+    "minMs": 116,
+    "maxMs": 925,
+    "meanMs": 552,
+    "p50Ms": 542,
+    "p75Ms": 796
+  },
+  "episodesStarted": 13,
+  "transitions": 30,
+  "playbackErrors": 0,
+  "audioOverlapIncidents": 0,
+  "stalls": 0,
+  "playersCreated": 3,
+  "playersReleased": 3
+}
+
+events captured: 132
+event types: {"player-created":3,"source-set":32,"status-change":28,"transition-start":30,"first-frame":13,"transition-complete":9,"playing-change":14,"player-released":3}

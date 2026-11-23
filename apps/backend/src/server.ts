@@ -3,8 +3,31 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { SERVICE_NAME, SERVICE_VERSION, SHUTDOWN_TIMEOUT_MS } from './config/constants.js';
 import { logger } from './utils/logger.js';
+import { connectDatabase, disconnectDatabase } from './services/prisma.js';
+import { registerIdentityProvider } from './bootstrap/identity.js';
+
+/*
+ * Identity before the app is built, so the first request cannot arrive before
+ * a provider is registered. The default is the null provider, which refuses
+ * every protected route — failing closed is the only safe default while real
+ * authentication does not exist.
+ */
+registerIdentityProvider();
 
 const app = createApp();
+
+/**
+ * Connect before binding the port.
+ *
+ * An instance that is listening but cannot reach its database will accept
+ * traffic and fail every request. Connecting first means a database problem
+ * stops the deploy instead of starting a broken instance.
+ */
+await connectDatabase().catch((err: unknown) => {
+  // The URL itself is never logged: it carries the password.
+  logger.fatal({ err }, 'Could not connect to the database - refusing to start');
+  process.exit(1);
+});
 
 const server: Server = app.listen(env.PORT, env.HOST, () => {
   logger.info(
@@ -36,8 +59,13 @@ function shutdown(signal: string): void {
       logger.error({ err }, 'Error while closing the server');
       process.exit(1);
     }
-    logger.info('Shutdown complete');
-    process.exit(0);
+
+    // The pool closes only after the HTTP server has drained, so a request
+    // still in flight keeps the database it is using.
+    void disconnectDatabase().finally(() => {
+      logger.info('Shutdown complete');
+      process.exit(0);
+    });
   });
 }
 

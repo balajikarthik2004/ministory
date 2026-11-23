@@ -132,7 +132,18 @@ Server data is never copied into Zustand. Mirroring server data in a client stor
 
 This is the highest-risk component in the product and is the subject of a dedicated spike in Milestone 1 (see §10 R-1).
 
-**Offline.** TanStack Query persistence for last-seen lists; watch-progress writes queue in AsyncStorage and flush on reconnect (HIST-06).
+**Offline.** TanStack Query holds last-seen lists; watch progress and playback telemetry are persisted in **SQLite** (`expo-sqlite`) and flushed on reconnect (HIST-06).
+
+> **Corrected in M2.2.** This section previously specified AsyncStorage. The
+> implementation uses SQLite, because a durable outbox needs transactions and
+> a query language that AsyncStorage does not have: claim-and-mark-in-flight
+> must be atomic, the dispatch query is "pending rows whose backoff has
+> elapsed, oldest first, limit N", and attempt counts and retry windows belong
+> on the row. Full reasoning in DECISIONS.md **ADR-23**.
+>
+> SQLite here is **mobile-local only** — an event outbox and the viewer's own
+> progress. PostgreSQL remains the system of record; the local store is not a
+> copy of the server schema and must not become one.
 
 ---
 
@@ -181,24 +192,44 @@ No cache in v1 beyond HTTP `Cache-Control` on public catalogue endpoints (`s-max
 
 ---
 
-## 6. Authentication & Authorisation **[APPROVAL NEEDED]**
+## 6. Authentication & Authorisation
 
-CLAUDE.md §3 offers "JWT or Firebase Authentication". These solve different halves of the problem, and the right answer uses both.
+**Implemented in M2.5** for email and password. Approved 2026-11-17, ADR-37.
 
-**Consumer (mobile):**
+**Consumer (mobile), as built:**
 
-1. Firebase Authentication handles the identity proof — Google Sign-In and phone OTP. Building phone OTP ourselves means an SMS provider, DLT registration in India, retry logic and fraud handling, and buys nothing.
-2. The client sends the Firebase ID token once to `POST /auth/session`.
-3. The backend verifies it with the Firebase Admin SDK, upserts the `User`, and issues **its own** access token (JWT, 15 min) and refresh token (opaque, 60 days, rotating, hashed at rest).
-4. Every subsequent call uses our access token.
+1. Email and password, verified against an Argon2id hash by our own backend.
+   No external identity provider is involved.
+2. The backend issues **its own** access token (JWT, HS256, 15 min, `iss` and
+   `aud` validated) and refresh token (opaque, 60 days, rotating, SHA-256 at
+   rest — ADR-38).
+3. Every subsequent call uses our access token.
+4. A refresh presented twice revokes the whole session family (ADR-40).
+
+**Why not a managed provider.** Whatever proves identity, step 2 is ours
+regardless: roles, entitlement and ban status must be server-side and
+revocable, and CLAUDE.md §11 is only satisfiable that way. A managed provider
+would not remove that work, only add a vendor beside it. The free tiers were
+checked rather than assumed, and the comparison is in ADR-37.
+
+**Firebase is still the plan for what it is actually good at.** ADR-06 stands
+unchanged for Google Sign-In and phone OTP — building phone OTP ourselves
+means an SMS provider and DLT registration in India, and buys nothing. It
+arrives as a second `IdentityProvider` behind the same boundary, which is one
+branch in `bootstrap/identity.ts`. `User.firebaseUid` is already in the schema
+and nullable.
+
+**Google Sign-In is deferred for a different reason than cost.** It needs an
+OAuth client in Google Cloud Console, which is an external account M2.5 was
+scoped not to create. `POST /auth/google` drops into the existing module.
 
 Why not use the Firebase token directly: roles, subscription entitlement and ban status must be ours, evaluated server-side and revocable instantly. Firebase tokens cannot be revoked mid-flight and carry no entitlement claims we control. CLAUDE.md §11 — "never trust client-side subscription status" — is only satisfiable if the backend owns the token.
 
-**Guest:** Firebase anonymous auth produces a real `User` row with `isAnonymous = true`. On sign-in, the anonymous account's history and favourites are merged into the permanent account inside one transaction (AUTH-06).
+**Guest (implemented M2.5):** `POST /auth/guest` produces a real `User` row with `isAnonymous = true`, bound to a client-generated device id so the account survives a restart. On sign-in the anonymous account's history, progress and favourites are merged into the permanent account inside one transaction (AUTH-06). Conflicting rows keep the registered account's values rather than failing the merge — ADR-41.
 
 **Admin:** entirely separate. Email + password (argon2id), backend-issued JWT, mandatory TOTP 2FA for SuperAdmin, in a distinct token audience so a consumer token can never authenticate an admin route. Admin accounts are created by invitation only — no public signup path exists.
 
-**Token storage:** `expo-secure-store` on mobile (Keychain/Keystore). Admin uses an httpOnly, Secure, SameSite=Strict refresh cookie; the access token stays in memory only. Never `localStorage`.
+**Token storage (implemented M2.5):** `expo-secure-store` on mobile (Keychain/Keystore) holds the refresh token; the access token lives in memory only and is never persisted — it expires in fifteen minutes and would be a second credential at rest for nothing. Admin will use an httpOnly, Secure, SameSite=Strict refresh cookie. Never `localStorage`, never AsyncStorage.
 
 **RBAC:** roles on the user, permissions checked by an `authorize(...)` middleware driven by a central permission matrix, documented in API_DOCUMENTATION.md §3.
 
@@ -256,7 +287,50 @@ Posters, covers and thumbnails go to Cloudflare R2 behind a CDN, uploaded via ba
 - **Firebase Analytics / GA4** for funnels and retention — screen views, signups, purchases.
 - **Our own `PlaybackEvent` table** for anything the admin dashboard reports on. Views, watch duration and completion rate must be queryable by us, joinable with our catalogue, and correct. They cannot depend on an external product's sampling or retention window.
 
-Clients send a playback heartbeat every 15 seconds plus `start` / `pause` / `complete` / `error` events, batched. A nightly job rolls raw events into `EpisodeDailyStat`; the admin dashboard reads only the rollups. Raw events are partitioned by month and dropped after 90 days — without that, this table becomes the largest object in the database within a quarter.
+Clients batch a `playback_progress` heartbeat every 15 seconds alongside the lifecycle events. A nightly job rolls raw events into `EpisodeDailyStat`; the admin dashboard reads only the rollups. Raw events are dropped after 90 days — without that, this table becomes the largest object in the database within a quarter.
+
+**Implemented in M2.4.** The 90-day sweep lives in
+`modules/playback/playback.retention.ts` and runs as a manually invoked
+command, `pnpm --filter @minidrama/backend retention:events` (with
+`-- --dry-run` to count without deleting). It measures the window against
+`receivedAt`, which Postgres sets, rather than the client-supplied
+`occurredAt`; it deletes in bounded batches so no single transaction holds a
+long lock; and it is idempotent, so a rerun is a no-op. A scheduler is
+deliberately not part of this — see ADR-35. The `EpisodeDailyStat` rollup is
+still scheduled work, so the admin dashboard has nothing to read yet.
+
+Ingestion is rate limited at 120 requests per minute per caller (ADR-34),
+sized so that a reconnecting device draining a real offline backlog cannot
+trip it. A refusal is a 429 carrying `RATE_LIMITED`, which the mobile sync
+adapter retries rather than treating as a rejection.
+
+**The event taxonomy (M2.2, implemented M2.3).** Eight values, defined in `packages/contracts`:
+
+`playback_started` · `playback_paused` · `playback_resumed` · `playback_progress` · `playback_completed` · `playback_failed` · `episode_changed` · `playback_abandoned`
+
+> **Corrected in M2.3.** This document and DATABASE_SCHEMA.md §3 previously
+> specified five SCREAMING_SNAKE values (`START`/`HEARTBEAT`/`PAUSE`/
+> `COMPLETE`/`ERROR`). The shipped client produces eight, in lower_snake_case.
+> They are an analytics vocabulary rather than a database enum — written to
+> `PlaybackEvent.type`, aggregated into `EpisodeDailyStat`, and read in
+> dashboards and ad-hoc SQL for the life of the product — so renaming them
+> later means rewriting historical rows. See DECISIONS.md **ADR-26**.
+>
+> `playback_abandoned` is the one worth noting: without it a viewer who closes
+> the player at 40% is indistinguishable from one still watching, and no
+> drop-off curve is computable.
+
+**Delivery is at-least-once (ADR-25).** The client retries any send whose
+outcome it could not confirm, including sends that may have succeeded, so
+ingestion must honour three rules:
+
+1. **`eventId` is the idempotency key.** A repeat is a no-op, not a duplicate row.
+2. **The acknowledgement names ids** (`acceptedEventIds`), not a bare 202. The client deletes only what the server says it stored; partial acceptance is a normal outcome.
+3. **`occurredAt` is a device clock and is not trusted.** The server records its own `receivedAt` alongside it.
+
+**Testing.** The playback pipeline and the backend are covered by Node's
+built-in test runner rather than Jest — see DECISIONS.md **ADR-24** for the
+trade-off and for when to add `jest-expo` (the first component test).
 
 **Operational:** Sentry on all three apps with release tracking and sourcemap upload; structured JSON logs (pino) with a request ID propagated to Sentry; `/health` (liveness) and `/ready` (DB + Mux reachability). Mux Data gives playback QoE — rebuffer ratio, startup time, error rate — for free; it is what will tell us whether PLY-04 is actually being met in the field.
 
@@ -276,6 +350,10 @@ Short-form ADRs. Full ADRs land in `docs/adr/` as each is approved.
 | ADR-06 | Own playback-event table alongside GA4 | GA4 only | Admin analytics must be joinable with the catalogue and under our retention control. |
 | ADR-07 | Mux as video provider, behind a `VideoProvider` interface | Cloudflare Stream; self-hosted ffmpeg + S3 | Mux is the fastest path to a correct HLS pipeline. The interface exists because per-minute delivery cost is the single largest scaling risk (§10 R-2), and switching must not be a rewrite. |
 | ADR-08 | Rule-based recommendations in v1 | Vector/collaborative filtering | No interaction data exists at launch. The endpoint contract is designed so the engine can be replaced invisibly. |
+| ADR-23 | SQLite for the mobile offline outbox | AsyncStorage (as originally specified in §4) | A durable queue needs transactions, indexed dispatch and per-row retry metadata. **Supersedes the AsyncStorage note in §4.** |
+| ADR-24 | Node's built-in test runner | Jest + jest-expo (CLAUDE.md §14) | Zero dependencies, and `node:sqlite` executes the repositories' real SQL. Revisit at the first component test. |
+| ADR-25 | At-least-once delivery with server-side deduplication | Exactly-once; drop-on-ambiguity | Dropping a possibly-delivered event loses data on every lost response. Deduplication on `eventId` is cheap. |
+| ADR-26 | lower_snake_case playback event names | SCREAMING_SNAKE, matching every other enum | These are analytics values that outlive the schema; renaming means rewriting history. **Supersedes the five-value enum in §8 and DATABASE_SCHEMA.md §3.** |
 
 ---
 
@@ -320,7 +398,7 @@ CLAUDE.md specifies no hosting, CI or environment strategy. Proposal:
 | 1 | `apps/` + `packages/` monorepo layout, extending CLAUDE.md §4 (§3) | **Approved** 2026-11-15 · implemented M1.1 · DECISIONS.md ADR-01 |
 | 2 | pnpm + Turborepo toolchain (§3) | **Approved** · implemented M1.1 · ADR-02 |
 | 3 | `packages/contracts` as a shared Zod/type package (§3) | **Approved** · implemented M1.1 · ADR-05 |
-| 4 | Firebase identity + backend-issued session JWT (§6) | **Approved in principle**, deferred by CLAUDE.md §18 (free-first). Local JWT + bcrypt in development behind an `AuthProvider` interface. ADR-06 / ADR-07 |
+| 4 | Firebase identity + backend-issued session JWT (§6) | **Superseded for M2.5 by ADR-37**: self-hosted email + password, implemented 2026-11-17. The backend-issued session half (ADR-07) is built as specified. Firebase remains approved in principle for Google/phone and is still deferred by CLAUDE.md §18. |
 | 5 | pg-boss as a background job runner (§5) | **Approved**, installation deferred until first needed in M3 · ADR-08 |
 | 6 | AdMob for rewarded ads, if MON-06 stays in scope (PRD PD-3) | **Open** — not needed before M7 |
 | 7 | Hosting, CI and environment strategy (§11) | **Open** — CLAUDE.md §18 defers paid cloud hosting; local and free tiers only for now |
@@ -333,7 +411,7 @@ Added to CLAUDE.md after this document was written. It does not change the archi
 | Concern | Development (free) | Production (needs approval) |
 |---|---|---|
 | Video (§7) | FFmpeg + locally generated HLS behind `VideoProvider` | Mux behind the same interface — ADR-09 |
-| Identity (§6) | Local JWT + bcrypt behind `AuthProvider` | Firebase Auth — ADR-06 |
+| Identity (§6) | **Built:** self-hosted JWT + Argon2id behind `IdentityProvider` (ADR-37) | Firebase Auth for Google/phone — ADR-06 |
 | Storage (§7) | Local filesystem behind `StorageProvider` | Cloudflare R2 |
 | Database (§4) | Local PostgreSQL in Docker | Managed PostgreSQL |
 
